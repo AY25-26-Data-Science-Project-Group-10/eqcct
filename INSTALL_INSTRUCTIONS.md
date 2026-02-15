@@ -8,11 +8,6 @@ The previous `eqcctpro/environment.yml` mixes TensorFlow and PyTorch CUDA depend
 
 ## 1) Clone Repository
 
-```bash
-git clone https://github.com/ut-beg-texnet/eqcct.git
-cd eqcct
-```
-
 ## 2) Choose an EQCCTPro Environment
 
 ### Option A: TensorFlow workflow (`model_type='eqcct'`)
