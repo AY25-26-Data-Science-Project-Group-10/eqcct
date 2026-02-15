@@ -8,6 +8,11 @@ The previous `eqcctpro/environment.yml` mixes TensorFlow and PyTorch CUDA depend
 
 ## 1) Clone Repository
 
+```bash
+git clone https://github.com/ut-beg-texnet/eqcct.git
+cd eqcct
+```
+
 ## 2) Choose an EQCCTPro Environment
 
 ### Option A: TensorFlow workflow (`model_type='eqcct'`)
@@ -36,16 +41,19 @@ From the `eqcctpro` directory, run scripts as documented in `eqcctpro/README.md`
 python experiments/main/run.py
 ```
 
-## 4) Optional: Install EQCCTOne
+## 4) Optional: Install EQCCTOne (Separate Legacy Environment)
 
-If you need the original package:
+`eqcctone` is pinned to an older stack (Python 3.7 + TensorFlow 2.8), so keep it in a dedicated environment.
 
 ```bash
 cd eqcctone
+conda env create -f environment-eqcctone.yml
+conda activate eqcctone
 pip install -e .
 ```
 
 ## Notes
 
 - Do not install TensorFlow and PyTorch GPU stacks into the same conda environment for this project.
-- If you need both workflows, create and switch between `eqcctpro-tf` and `eqcctpro-torch`.
+- Do not install `eqcctone` into `eqcctpro-tf` or `eqcctpro-torch`; use the separate `eqcctone` environment.
+- If you need all workflows, create and switch between `eqcctpro-tf`, `eqcctpro-torch`, and `eqcctone`.
