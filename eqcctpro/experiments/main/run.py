@@ -2,13 +2,13 @@ import os
 from eqcctpro import RunEQCCTPro, EvaluateSystem, OptimalCPUConfigurationFinder, OptimalGPUConfigurationFinder
 
 # --- Common Directory Paths (Modify for your local system) ---
-base_dir = '/home/skevofilaxc/workspace/clean_eqcct/eqcct/eqcctpro'
+base_dir = '/home/blackwinter/projects/eqcct/eqcctpro'
 input_mseed_directory_path = os.path.join(base_dir, 'data/230_stations_1_min_dt')
 output_pick_directory_path = os.path.join(base_dir, 'results/csv/logs')
 log_file_path = os.path.join(output_pick_directory_path, 'eqcctpro.log')
 csv_filepath = os.path.join(base_dir, 'results/csv')
 models_dir = os.path.join(base_dir, 'models/EQCCT')
-tmp_dir = '/lambda1a/skevofilaxc/tmp'
+tmp_dir = '/tmp'
 
 # =============================================================================
 # 1. RunEQCCTPro Examples (Single Instance Runs)
