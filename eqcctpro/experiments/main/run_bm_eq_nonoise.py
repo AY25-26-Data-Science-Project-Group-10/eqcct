@@ -10,12 +10,9 @@ if base_dir not in sys.path:
 from eqcctpro import RunEQCCTPro
 
 input_mseed_directory_path = os.path.join(base_dir, "data/waveforms_earthquakes_nonoise")
-output_root_directory_path = os.path.join(base_dir, "results/csv/bm_eq_nonoise_subset")
+output_root_directory_path = os.path.join(base_dir, "results/csv/bm_eq_nonoise")
 models_dir = os.path.join(base_dir, "models/EQCCT")
 tmp_dir = os.path.join(base_dir, "tmp")
-
-# How many timestamp folders to run from the dataset.
-N_SUBSET_TIMESTAMPS = 10
 
 os.makedirs(output_root_directory_path, exist_ok=True)
 os.makedirs(tmp_dir, exist_ok=True)
@@ -35,13 +32,16 @@ chunk_dirs = sorted(
     d for d in os.listdir(input_mseed_directory_path)
     if os.path.isdir(os.path.join(input_mseed_directory_path, d))
 )
-selected_chunk_dirs = chunk_dirs[:N_SUBSET_TIMESTAMPS]
+selected_chunk_dirs = chunk_dirs
 
 if not selected_chunk_dirs:
     raise RuntimeError(f"No timestamp folders found under: {input_mseed_directory_path}")
 
 print(f"Running {len(selected_chunk_dirs)} timestamp folder(s) from: {input_mseed_directory_path}")
 run_start = time.time()
+failed_predictions = 0
+skipped_folders = 0
+failed_folder_names = []
 for idx, chunk_dir_name in enumerate(selected_chunk_dirs, start=1):
     start_time, end_time = parse_chunk_dir_name(chunk_dir_name)
     out_dir = os.path.join(output_root_directory_path, chunk_dir_name)
@@ -54,6 +54,7 @@ for idx, chunk_dir_name in enumerate(selected_chunk_dirs, start=1):
     )
     if not chunk_stations:
         print(f"[{idx}/{len(selected_chunk_dirs)}] {chunk_dir_name} has no station subdirs. Skipping.")
+        skipped_folders += 1
         continue
     specific_stations = ",".join(chunk_stations)
 
@@ -71,7 +72,7 @@ for idx, chunk_dir_name in enumerate(selected_chunk_dirs, start=1):
         output_dir=out_dir,
         log_filepath=log_file_path,
         selected_gpus=[0],
-        vram_mb=3000,
+        vram_mb=4000,
         cpu_id_list=range(0, cpu_workers),
         specific_stations=specific_stations,
         number_of_concurrent_station_predictions=1,
@@ -84,10 +85,21 @@ for idx, chunk_dir_name in enumerate(selected_chunk_dirs, start=1):
         waveform_overlap=0,
         tmp_dir=tmp_dir,
     )
-    runner_eqcct.run_eqcctpro()
+    try:
+        runner_eqcct.run_eqcctpro()
+    except Exception as exc:
+        failed_predictions += 1
+        failed_folder_names.append(chunk_dir_name)
+        print(f"[{idx}/{len(selected_chunk_dirs)}] {chunk_dir_name} failed: {exc}")
 
 total_seconds = time.time() - run_start
+total_minutes = total_seconds / 60.0
+successful_predictions = len(selected_chunk_dirs) - failed_predictions - skipped_folders
 print(
-    f"Finished predicting {len(selected_chunk_dirs)} timestamp folder(s) "
-    f"in {total_seconds:.2f} s ({total_seconds/60.0:.2f} min)."
+    f"Finished predicting {len(selected_chunk_dirs)} timestamp folder(s) in {total_minutes:.2f} min. "
+    f"Succeeded={successful_predictions}, Failed={failed_predictions}, Skipped={skipped_folders}."
 )
+if failed_folder_names:
+    print("Failed folders:")
+    for folder_name in failed_folder_names:
+        print(f"- {folder_name}")
