@@ -1,0 +1,54 @@
+2026-02-22 19:06:23,289 - INFO - 
+2026-02-22 19:06:23,289 - INFO - ------- Welcome to EQCCTPro -------
+2026-02-22 19:06:23,289 - INFO - 
+2026-02-22 19:06:23,289 - INFO - Running EQCCT over Requested MSeed Files using CPU(s)...
+2026-02-22 19:06:23,289 - INFO - GPU disabled (CPU-only).
+2026-02-22 19:06:23,290 - INFO - Configured Intra-op threads = 1
+2026-02-22 19:06:23,290 - INFO - Configured Inter-op threads = 1
+2026-02-22 19:06:23,290 - INFO - TensorFlow: No GPUs visible; TF will proceed on CPU.
+2026-02-22 19:06:23,290 - INFO - 
+2026-02-22 19:06:28,568 - INFO - Ray Successfully Initialized with 4 CPU(s) ([0, 1, 2, 3] CPU Affinity Binding).
+2026-02-22 19:06:28,569 - INFO - Analyzing 1 time chunk(s) from 2025-08-22 03:38:10 to 2025-08-22 03:39:10 (dt=1min, overlap=0min).
+2026-02-22 19:06:28,569 - INFO - Using 2 selected station(s).
+2026-02-22 19:06:28,569 - INFO - 
+2026-02-22 19:06:28,569 - INFO - ------- Starting EQCCTPro... -------
+2026-02-22 19:06:28,570 - INFO - Detailed subprocess information can be found in the log file.
+2026-02-22 19:06:28,570 - INFO - 
+2026-02-22 19:06:28,945 - INFO - GPU disabled (CPU-only).
+2026-02-22 19:06:30,411 - INFO - Configured Intra-op threads = 1
+2026-02-22 19:06:30,414 - INFO - Configured Inter-op threads = 1
+2026-02-22 19:06:30,460 - INFO - TensorFlow: No GPUs visible; TF will proceed on CPU.
+2026-02-22 19:06:30,462 - INFO - 
+2026-02-22 19:06:30,464 - INFO - ------- Hardware Configuration -------
+2026-02-22 19:06:30,467 - INFO - CPU affinity set to cores: [0, 1, 2, 3]
+2026-02-22 19:06:30,469 - INFO - 
+2026-02-22 19:06:30,471 - INFO - ------- Data Preprocessing for EQCCTPro -------
+2026-02-22 19:06:30,473 - INFO - 2 station(s) in /home/blackwinter/projects/eqcct/eqcctpro/data/waveforms_earthquakes_nonoise/20250822T033810Z_20250822T033910Z
+2026-02-22 19:06:30,475 - INFO - Using 2 selected station(s): ['KMNF', 'RNF'].
+2026-02-22 19:06:30,478 - INFO - Creating model actor(s)...
+2026-02-22 19:06:30,480 - INFO - System RAM: Total=7870 MB, Available=1866 MB
+2026-02-22 19:06:30,482 - INFO - Usable RAM budget: 7083 MB (90% of total)
+2026-02-22 19:06:30,484 - INFO - ===== MEMORY-AWARE CPU ACTOR POOL (EQCCT) =====
+2026-02-22 19:06:30,486 - INFO - Requested concurrent tasks: 1
+2026-02-22 19:06:30,489 - INFO - Available CPUs: 4
+2026-02-22 19:06:30,491 - INFO - Available RAM: 7083 MB
+2026-02-22 19:06:30,493 - INFO - RAM per model: 2264 MB
+2026-02-22 19:06:30,495 - INFO - Max actors by RAM: 3
+2026-02-22 19:06:30,497 - INFO - Creating 1 ModelActor(s)
+2026-02-22 19:06:30,499 - INFO - Let Ray handle scheduling (taskset already restricts CPU visibility)
+2026-02-22 19:06:30,501 - INFO - Creating ModelActor 1/1 (2.21GB RAM each)...
+2026-02-22 19:06:34,551 - INFO - ModelActor 1 created successfully.
+2026-02-22 19:06:34,555 - INFO - Created 1 CPU actor(s). Task queue will handle concurrency.
+2026-02-22 19:06:34,558 - INFO - Starting EQCCTPro parallelized waveform processing...
+2026-02-22 19:06:34,560 - INFO - 
+2026-02-22 19:06:34,562 - INFO - ------- Analyzing Seismic Waveforms for P and S Picks via EQCCT -------
+2026-02-22 19:06:34,565 - INFO - Analyzing 0:01:00 minute timechunk from 2025-08-22 03:38:10 to 2025-08-22 03:39:10 (0 min overlap)
+2026-02-22 19:06:34,567 - INFO - Processing a total of 2 stations, 1 at a time.
+2026-02-22 19:06:38,697 - INFO - (1/2) KMNF: Finished the prediction in 2.16s. (HP=1.0, LP=45.0)
+2026-02-22 19:06:38,802 - INFO - (2/2) RNF: Finished the prediction in 0.1s. (HP=1.0, LP=45.0)
+2026-02-22 19:06:38,804 - INFO - 
+2026-02-22 19:06:38,806 - INFO - ------- Parallel Station Waveform Processing Complete For 2025-08-22 03:38:10 to 2025-08-22 03:39:10 Timechunk-------
+2026-02-22 19:06:38,808 - INFO - Picks saved at /home/blackwinter/projects/eqcct/eqcctpro/results/csv/bm_eq_nonoise/20250822T033810Z_20250822T033910ZProcess Runtime: 4.25 s
+2026-02-22 19:06:38,814 - INFO - Successfully ran EQCCTPro, exiting...
+2026-02-22 19:06:40,406 - INFO - Ray Successfully Shutdown.
+2026-02-22 19:06:40,406 - INFO - ------- Successfully Picked All Waveform(s) from all Timechunk(s) -------

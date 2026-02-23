@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import logging
 from datetime import datetime
 
 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -18,6 +19,7 @@ os.makedirs(output_root_directory_path, exist_ok=True)
 os.makedirs(tmp_dir, exist_ok=True)
 
 cpu_workers = min(4, os.cpu_count() or 1)
+baseline_ld_library_path = os.environ.get("LD_LIBRARY_PATH", "")
 
 
 def parse_chunk_dir_name(chunk_dir_name: str):
@@ -43,6 +45,20 @@ failed_predictions = 0
 skipped_folders = 0
 failed_folder_names = []
 for idx, chunk_dir_name in enumerate(selected_chunk_dirs, start=1):
+    # Reset env that EQCCTPro mutates per run to prevent cumulative growth.
+    # Without this, repeated runs can hit Linux ARG_MAX when Ray spawns gcs_server.
+    os.environ["LD_LIBRARY_PATH"] = baseline_ld_library_path
+
+    # RunEQCCTPro uses a global logger name ("eqcctpro") and only adds handlers once.
+    # Clear handlers so each folder gets its own run.log file handler.
+    eqcctpro_logger = logging.getLogger("eqcctpro")
+    for handler in list(eqcctpro_logger.handlers):
+        try:
+            handler.flush()
+            handler.close()
+        finally:
+            eqcctpro_logger.removeHandler(handler)
+
     start_time, end_time = parse_chunk_dir_name(chunk_dir_name)
     out_dir = os.path.join(output_root_directory_path, chunk_dir_name)
     log_file_path = os.path.join(out_dir, "run.log")

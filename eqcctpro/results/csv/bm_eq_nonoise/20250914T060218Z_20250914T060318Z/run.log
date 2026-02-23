@@ -1,0 +1,54 @@
+2026-02-22 19:59:07,648 - INFO - 
+2026-02-22 19:59:07,649 - INFO - ------- Welcome to EQCCTPro -------
+2026-02-22 19:59:07,649 - INFO - 
+2026-02-22 19:59:07,649 - INFO - Running EQCCT over Requested MSeed Files using CPU(s)...
+2026-02-22 19:59:07,649 - INFO - GPU disabled (CPU-only).
+2026-02-22 19:59:07,650 - INFO - Configured Intra-op threads = 1
+2026-02-22 19:59:07,650 - INFO - Configured Inter-op threads = 1
+2026-02-22 19:59:07,650 - INFO - TensorFlow: No GPUs visible; TF will proceed on CPU.
+2026-02-22 19:59:07,650 - INFO - 
+2026-02-22 19:59:13,047 - INFO - Ray Successfully Initialized with 4 CPU(s) ([0, 1, 2, 3] CPU Affinity Binding).
+2026-02-22 19:59:13,047 - INFO - Analyzing 1 time chunk(s) from 2025-09-14 06:02:18 to 2025-09-14 06:03:18 (dt=1min, overlap=0min).
+2026-02-22 19:59:13,047 - INFO - Using 2 selected station(s).
+2026-02-22 19:59:13,047 - INFO - 
+2026-02-22 19:59:13,048 - INFO - ------- Starting EQCCTPro... -------
+2026-02-22 19:59:13,048 - INFO - Detailed subprocess information can be found in the log file.
+2026-02-22 19:59:13,048 - INFO - 
+2026-02-22 19:59:13,399 - INFO - GPU disabled (CPU-only).
+2026-02-22 19:59:14,844 - INFO - Configured Intra-op threads = 1
+2026-02-22 19:59:14,846 - INFO - Configured Inter-op threads = 1
+2026-02-22 19:59:14,888 - INFO - TensorFlow: No GPUs visible; TF will proceed on CPU.
+2026-02-22 19:59:14,890 - INFO - 
+2026-02-22 19:59:14,892 - INFO - ------- Hardware Configuration -------
+2026-02-22 19:59:14,895 - INFO - CPU affinity set to cores: [0, 1, 2, 3]
+2026-02-22 19:59:14,897 - INFO - 
+2026-02-22 19:59:14,899 - INFO - ------- Data Preprocessing for EQCCTPro -------
+2026-02-22 19:59:14,901 - INFO - 2 station(s) in /home/blackwinter/projects/eqcct/eqcctpro/data/waveforms_earthquakes_nonoise/20250914T060218Z_20250914T060318Z
+2026-02-22 19:59:14,903 - INFO - Using 2 selected station(s): ['KUNI', 'TRE03'].
+2026-02-22 19:59:14,905 - INFO - Creating model actor(s)...
+2026-02-22 19:59:14,907 - INFO - System RAM: Total=7870 MB, Available=1724 MB
+2026-02-22 19:59:14,909 - INFO - Usable RAM budget: 7083 MB (90% of total)
+2026-02-22 19:59:14,911 - INFO - ===== MEMORY-AWARE CPU ACTOR POOL (EQCCT) =====
+2026-02-22 19:59:14,913 - INFO - Requested concurrent tasks: 1
+2026-02-22 19:59:14,915 - INFO - Available CPUs: 4
+2026-02-22 19:59:14,918 - INFO - Available RAM: 7083 MB
+2026-02-22 19:59:14,920 - INFO - RAM per model: 2264 MB
+2026-02-22 19:59:14,922 - INFO - Max actors by RAM: 3
+2026-02-22 19:59:14,924 - INFO - Creating 1 ModelActor(s)
+2026-02-22 19:59:14,926 - INFO - Let Ray handle scheduling (taskset already restricts CPU visibility)
+2026-02-22 19:59:14,928 - INFO - Creating ModelActor 1/1 (2.21GB RAM each)...
+2026-02-22 19:59:18,777 - INFO - ModelActor 1 created successfully.
+2026-02-22 19:59:18,779 - INFO - Created 1 CPU actor(s). Task queue will handle concurrency.
+2026-02-22 19:59:18,782 - INFO - Starting EQCCTPro parallelized waveform processing...
+2026-02-22 19:59:18,785 - INFO - 
+2026-02-22 19:59:18,787 - INFO - ------- Analyzing Seismic Waveforms for P and S Picks via EQCCT -------
+2026-02-22 19:59:18,789 - INFO - Analyzing 0:01:00 minute timechunk from 2025-09-14 06:02:18 to 2025-09-14 06:03:18 (0 min overlap)
+2026-02-22 19:59:18,792 - INFO - Processing a total of 2 stations, 1 at a time.
+2026-02-22 19:59:22,828 - INFO - (1/2) KUNI: Finished the prediction in 2.13s. (HP=1.0, LP=45.0)
+2026-02-22 19:59:22,835 - INFO - (2/2) TRE03: FAILED reading mSEED.
+2026-02-22 19:59:22,837 - INFO - 
+2026-02-22 19:59:22,839 - INFO - ------- Parallel Station Waveform Processing Complete For 2025-09-14 06:02:18 to 2025-09-14 06:03:18 Timechunk-------
+2026-02-22 19:59:22,845 - INFO - Successfully ran EQCCTPro, exiting...
+2026-02-22 19:59:22,841 - INFO - Picks saved at /home/blackwinter/projects/eqcct/eqcctpro/results/csv/bm_eq_nonoise/20250914T060218Z_20250914T060318ZProcess Runtime: 4.05 s
+2026-02-22 19:59:24,468 - INFO - Ray Successfully Shutdown.
+2026-02-22 19:59:24,469 - INFO - ------- Successfully Picked All Waveform(s) from all Timechunk(s) -------

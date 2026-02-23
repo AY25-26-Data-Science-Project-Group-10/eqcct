@@ -1,0 +1,53 @@
+2026-02-22 21:52:34,087 - INFO - 
+2026-02-22 21:52:34,088 - INFO - ------- Welcome to EQCCTPro -------
+2026-02-22 21:52:34,088 - INFO - 
+2026-02-22 21:52:34,089 - INFO - Running EQCCT over Requested MSeed Files using CPU(s)...
+2026-02-22 21:52:34,089 - INFO - GPU disabled (CPU-only).
+2026-02-22 21:52:34,089 - INFO - Configured Intra-op threads = 1
+2026-02-22 21:52:34,089 - INFO - Configured Inter-op threads = 1
+2026-02-22 21:52:34,089 - INFO - TensorFlow: No GPUs visible; TF will proceed on CPU.
+2026-02-22 21:52:34,089 - INFO - 
+2026-02-22 21:52:39,574 - INFO - Ray Successfully Initialized with 4 CPU(s) ([0, 1, 2, 3] CPU Affinity Binding).
+2026-02-22 21:52:39,574 - INFO - Analyzing 1 time chunk(s) from 2025-10-31 10:00:05 to 2025-10-31 10:01:05 (dt=1min, overlap=0min).
+2026-02-22 21:52:39,575 - INFO - Using 1 selected station(s).
+2026-02-22 21:52:39,575 - INFO - 
+2026-02-22 21:52:39,575 - INFO - ------- Starting EQCCTPro... -------
+2026-02-22 21:52:39,575 - INFO - Detailed subprocess information can be found in the log file.
+2026-02-22 21:52:39,575 - INFO - 
+2026-02-22 21:52:39,955 - INFO - GPU disabled (CPU-only).
+2026-02-22 21:52:41,423 - INFO - Configured Intra-op threads = 1
+2026-02-22 21:52:41,426 - INFO - Configured Inter-op threads = 1
+2026-02-22 21:52:41,466 - INFO - TensorFlow: No GPUs visible; TF will proceed on CPU.
+2026-02-22 21:52:41,469 - INFO - 
+2026-02-22 21:52:41,471 - INFO - ------- Hardware Configuration -------
+2026-02-22 21:52:41,473 - INFO - CPU affinity set to cores: [0, 1, 2, 3]
+2026-02-22 21:52:41,475 - INFO - 
+2026-02-22 21:52:41,477 - INFO - ------- Data Preprocessing for EQCCTPro -------
+2026-02-22 21:52:41,479 - INFO - 1 station(s) in /home/blackwinter/projects/eqcct/eqcctpro/data/waveforms_earthquakes_nonoise/20251031T100005Z_20251031T100105Z
+2026-02-22 21:52:41,481 - INFO - Using 1 selected station(s): ['KLF'].
+2026-02-22 21:52:41,482 - INFO - Creating model actor(s)...
+2026-02-22 21:52:41,484 - INFO - System RAM: Total=7870 MB, Available=1427 MB
+2026-02-22 21:52:41,486 - INFO - Usable RAM budget: 7083 MB (90% of total)
+2026-02-22 21:52:41,488 - INFO - ===== MEMORY-AWARE CPU ACTOR POOL (EQCCT) =====
+2026-02-22 21:52:41,489 - INFO - Requested concurrent tasks: 1
+2026-02-22 21:52:41,491 - INFO - Available CPUs: 4
+2026-02-22 21:52:41,493 - INFO - Available RAM: 7083 MB
+2026-02-22 21:52:41,495 - INFO - RAM per model: 2264 MB
+2026-02-22 21:52:41,498 - INFO - Max actors by RAM: 3
+2026-02-22 21:52:41,500 - INFO - Creating 1 ModelActor(s)
+2026-02-22 21:52:41,502 - INFO - Let Ray handle scheduling (taskset already restricts CPU visibility)
+2026-02-22 21:52:41,504 - INFO - Creating ModelActor 1/1 (2.21GB RAM each)...
+2026-02-22 21:52:45,491 - INFO - ModelActor 1 created successfully.
+2026-02-22 21:52:45,495 - INFO - Created 1 CPU actor(s). Task queue will handle concurrency.
+2026-02-22 21:52:45,498 - INFO - Starting EQCCTPro parallelized waveform processing...
+2026-02-22 21:52:45,500 - INFO - 
+2026-02-22 21:52:45,502 - INFO - ------- Analyzing Seismic Waveforms for P and S Picks via EQCCT -------
+2026-02-22 21:52:45,506 - INFO - Analyzing 0:01:00 minute timechunk from 2025-10-31 10:00:05 to 2025-10-31 10:01:05 (0 min overlap)
+2026-02-22 21:52:45,509 - INFO - Processing a total of 1 stations, 1 at a time.
+2026-02-22 21:52:49,618 - INFO - (1/1) KLF: Finished the prediction in 2.16s. (HP=1.0, LP=45.0)
+2026-02-22 21:52:49,621 - INFO - 
+2026-02-22 21:52:49,623 - INFO - ------- Parallel Station Waveform Processing Complete For 2025-10-31 10:00:05 to 2025-10-31 10:01:05 Timechunk-------
+2026-02-22 21:52:49,625 - INFO - Picks saved at /home/blackwinter/projects/eqcct/eqcctpro/results/csv/bm_eq_nonoise/20251031T100005Z_20251031T100105ZProcess Runtime: 4.12 s
+2026-02-22 21:52:49,629 - INFO - Successfully ran EQCCTPro, exiting...
+2026-02-22 21:52:51,310 - INFO - Ray Successfully Shutdown.
+2026-02-22 21:52:51,311 - INFO - ------- Successfully Picked All Waveform(s) from all Timechunk(s) -------
