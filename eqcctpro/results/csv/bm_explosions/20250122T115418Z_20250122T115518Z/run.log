@@ -1,0 +1,55 @@
+2026-02-27 11:34:21,216 - INFO - 
+2026-02-27 11:34:21,216 - INFO - ------- Welcome to EQCCTPro -------
+2026-02-27 11:34:21,216 - INFO - 
+2026-02-27 11:34:21,217 - INFO - Running EQCCT over Requested MSeed Files using CPU(s)...
+2026-02-27 11:34:21,217 - INFO - GPU disabled (CPU-only).
+2026-02-27 11:34:21,217 - INFO - Configured Intra-op threads = 1
+2026-02-27 11:34:21,217 - INFO - Configured Inter-op threads = 1
+2026-02-27 11:34:21,217 - INFO - TensorFlow: No GPUs visible; TF will proceed on CPU.
+2026-02-27 11:34:21,217 - INFO - 
+2026-02-27 11:34:26,797 - INFO - Ray Successfully Initialized with 4 CPU(s) ([0, 1, 2, 3] CPU Affinity Binding).
+2026-02-27 11:34:26,798 - INFO - Analyzing 1 time chunk(s) from 2025-01-22 11:54:18 to 2025-01-22 11:55:18 (dt=1min, overlap=0min).
+2026-02-27 11:34:26,798 - INFO - Using 3 selected station(s).
+2026-02-27 11:34:26,798 - INFO - 
+2026-02-27 11:34:26,798 - INFO - ------- Starting EQCCTPro... -------
+2026-02-27 11:34:26,798 - INFO - Detailed subprocess information can be found in the log file.
+2026-02-27 11:34:26,798 - INFO - 
+2026-02-27 11:34:27,163 - INFO - GPU disabled (CPU-only).
+2026-02-27 11:34:28,628 - INFO - Configured Intra-op threads = 1
+2026-02-27 11:34:28,631 - INFO - Configured Inter-op threads = 1
+2026-02-27 11:34:28,671 - INFO - TensorFlow: No GPUs visible; TF will proceed on CPU.
+2026-02-27 11:34:28,674 - INFO - 
+2026-02-27 11:34:28,678 - INFO - ------- Hardware Configuration -------
+2026-02-27 11:34:28,681 - INFO - CPU affinity set to cores: [0, 1, 2, 3]
+2026-02-27 11:34:28,684 - INFO - 
+2026-02-27 11:34:28,687 - INFO - ------- Data Preprocessing for EQCCTPro -------
+2026-02-27 11:34:28,690 - INFO - 3 station(s) in /home/blackwinter/projects/eqcct/eqcctpro/data/waveforms_explosions_nonoise/20250122T115418Z_20250122T115518Z
+2026-02-27 11:34:28,692 - INFO - Using 3 selected station(s): ['FIA0', 'FIA1', 'LOVF'].
+2026-02-27 11:34:28,695 - INFO - Creating model actor(s)...
+2026-02-27 11:34:28,698 - INFO - System RAM: Total=7870 MB, Available=2545 MB
+2026-02-27 11:34:28,701 - INFO - Usable RAM budget: 7083 MB (90% of total)
+2026-02-27 11:34:28,703 - INFO - ===== MEMORY-AWARE CPU ACTOR POOL (EQCCT) =====
+2026-02-27 11:34:28,707 - INFO - Requested concurrent tasks: 1
+2026-02-27 11:34:28,711 - INFO - Available CPUs: 4
+2026-02-27 11:34:28,714 - INFO - Available RAM: 7083 MB
+2026-02-27 11:34:28,716 - INFO - RAM per model: 2264 MB
+2026-02-27 11:34:28,718 - INFO - Max actors by RAM: 3
+2026-02-27 11:34:28,721 - INFO - Creating 1 ModelActor(s)
+2026-02-27 11:34:28,723 - INFO - Let Ray handle scheduling (taskset already restricts CPU visibility)
+2026-02-27 11:34:28,725 - INFO - Creating ModelActor 1/1 (2.21GB RAM each)...
+2026-02-27 11:34:32,644 - INFO - ModelActor 1 created successfully.
+2026-02-27 11:34:32,647 - INFO - Created 1 CPU actor(s). Task queue will handle concurrency.
+2026-02-27 11:34:32,649 - INFO - Starting EQCCTPro parallelized waveform processing...
+2026-02-27 11:34:32,651 - INFO - 
+2026-02-27 11:34:32,653 - INFO - ------- Analyzing Seismic Waveforms for P and S Picks via EQCCT -------
+2026-02-27 11:34:32,656 - INFO - Analyzing 0:01:00 minute timechunk from 2025-01-22 11:54:18 to 2025-01-22 11:55:18 (0 min overlap)
+2026-02-27 11:34:32,658 - INFO - Processing a total of 3 stations, 1 at a time.
+2026-02-27 11:34:36,977 - INFO - (1/3) FIA0: Finished the prediction in 2.4s. (HP=1.0, LP=45.0)
+2026-02-27 11:34:37,078 - INFO - (2/3) FIA1: Finished the prediction in 0.09s. (HP=1.0, LP=45.0)
+2026-02-27 11:34:37,182 - INFO - (3/3) LOVF: Finished the prediction in 0.1s. (HP=1.0, LP=45.0)
+2026-02-27 11:34:37,184 - INFO - 
+2026-02-27 11:34:37,187 - INFO - ------- Parallel Station Waveform Processing Complete For 2025-01-22 11:54:18 to 2025-01-22 11:55:18 Timechunk-------
+2026-02-27 11:34:37,189 - INFO - Picks saved at /home/blackwinter/projects/eqcct/eqcctpro/results/csv/bm_explosions/20250122T115418Z_20250122T115518ZProcess Runtime: 4.54 s
+2026-02-27 11:34:37,192 - INFO - Successfully ran EQCCTPro, exiting...
+2026-02-27 11:34:38,829 - INFO - Ray Successfully Shutdown.
+2026-02-27 11:34:38,829 - INFO - ------- Successfully Picked All Waveform(s) from all Timechunk(s) -------
