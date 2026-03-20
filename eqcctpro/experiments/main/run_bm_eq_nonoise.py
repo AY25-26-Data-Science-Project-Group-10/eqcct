@@ -10,8 +10,10 @@ if base_dir not in sys.path:
 
 from eqcctpro import RunEQCCTPro
 
+threshold = 0.1
+
 input_mseed_directory_path = os.path.join(base_dir, "data/waveforms_earthquakes_nonoise")
-output_root_directory_path = os.path.join(base_dir, "results/csv/bm_eq_nonoise")
+output_root_directory_path = os.path.join(base_dir, "results/csv/eqcct_earthquakes_th0_1")
 models_dir = os.path.join(base_dir, "models/EQCCT")
 tmp_dir = os.path.join(base_dir, "tmp")
 
@@ -93,8 +95,8 @@ for idx, chunk_dir_name in enumerate(selected_chunk_dirs, start=1):
         specific_stations=specific_stations,
         number_of_concurrent_station_predictions=1,
         number_of_concurrent_timechunk_predictions=1,
-        P_threshold=0.001,
-        S_threshold=0.02,
+        P_threshold=threshold, # default value: 0.001,
+        S_threshold=threshold, # 0.02,
         start_time=start_time,
         end_time=end_time,
         timechunk_dt=1,
