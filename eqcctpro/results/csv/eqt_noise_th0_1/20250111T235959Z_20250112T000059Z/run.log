@@ -1,0 +1,47 @@
+2026-03-28 13:17:39,514 - INFO - 
+2026-03-28 13:17:39,514 - INFO - ------- Welcome to EQCCTPro -------
+2026-03-28 13:17:39,515 - INFO - 
+2026-03-28 13:17:39,515 - INFO - Running EQCCT over Requested MSeed Files using CPU(s)...
+2026-03-28 13:17:39,516 - INFO - GPU disabled (CPU-only).
+2026-03-28 13:17:39,516 - INFO - Skipping framework-specific initialization in the driver process.
+2026-03-28 13:17:41,096 - INFO - Ray Successfully Initialized with 4 CPU(s) ([0, 1, 2, 3] CPU Affinity Binding).
+2026-03-28 13:17:41,097 - INFO - Analyzing 1 time chunk(s) from 2025-01-11 23:59:59 to 2025-01-12 00:00:59 (dt=1min, overlap=0min).
+2026-03-28 13:17:41,097 - INFO - Using 1 selected station(s).
+2026-03-28 13:17:41,097 - INFO - 
+2026-03-28 13:17:41,097 - INFO - ------- Starting EQCCTPro... -------
+2026-03-28 13:17:41,097 - INFO - Detailed subprocess information can be found in the log file.
+2026-03-28 13:17:41,098 - INFO - 
+2026-03-28 13:17:41,419 - INFO - GPU disabled (CPU-only).
+2026-03-28 13:17:41,424 - INFO - Skipping framework-specific initialization in the driver process.
+2026-03-28 13:17:41,428 - INFO - ------- Hardware Configuration -------
+2026-03-28 13:17:41,431 - INFO - CPU affinity set to cores: [0, 1, 2, 3]
+2026-03-28 13:17:41,434 - INFO - 
+2026-03-28 13:17:41,436 - INFO - ------- Data Preprocessing for EQCCTPro -------
+2026-03-28 13:17:41,439 - INFO - 1 station(s) in /home/blackwinter/projects/eqcct/eqcctpro/data/waveforms_noise_only/20250111T235959Z_20250112T000059Z
+2026-03-28 13:17:41,442 - INFO - Using 1 selected station(s): ['KU1'].
+2026-03-28 13:17:41,444 - INFO - Creating model actor(s)...
+2026-03-28 13:17:41,447 - INFO - System RAM: Total=7870 MB, Available=4410 MB
+2026-03-28 13:17:41,449 - INFO - Usable RAM budget: 7083 MB (90% of total)
+2026-03-28 13:17:41,452 - INFO - ===== MEMORY-AWARE CPU ACTOR POOL =====
+2026-03-28 13:17:41,455 - INFO - Requested concurrent tasks: 1
+2026-03-28 13:17:41,458 - INFO - Available CPUs: 4
+2026-03-28 13:17:41,461 - INFO - Available RAM: 7083 MB
+2026-03-28 13:17:41,464 - INFO - RAM per model: 2060 MB
+2026-03-28 13:17:41,467 - INFO - Max actors by RAM: 3
+2026-03-28 13:17:41,469 - INFO - Creating 1 SeisBenchModelActor(s)
+2026-03-28 13:17:41,472 - INFO - Let Ray handle scheduling (taskset already restricts CPU visibility)
+2026-03-28 13:17:41,475 - INFO - Creating SeisBenchModelActor 1/1 (2.01GB RAM each)...
+2026-03-28 13:17:44,585 - INFO - SeisBenchModelActor 1 created successfully.
+2026-03-28 13:17:44,589 - INFO - Created 1 CPU actor(s). Task queue will handle concurrency.
+2026-03-28 13:17:44,592 - INFO - Starting EQCCTPro parallelized waveform processing...
+2026-03-28 13:17:44,595 - INFO - 
+2026-03-28 13:17:44,598 - INFO - ------- Analyzing Seismic Waveforms for P and S Picks via SeisBench (EQTransformer - original_nonconservative) -------
+2026-03-28 13:17:44,602 - INFO - Analyzing 0:01:00 minute timechunk from 2025-01-11 23:59:59 to 2025-01-12 00:00:59 (0 min overlap)
+2026-03-28 13:17:44,605 - INFO - Processing a total of 1 stations, 1 at a time.
+2026-03-28 13:17:47,050 - INFO - (1/1) KU1: Finished the prediction in 0.15s. (HP=1.0, LP=45.0, picks=0)
+2026-03-28 13:17:47,053 - INFO - 
+2026-03-28 13:17:47,056 - INFO - ------- Parallel Station Waveform Processing Complete For 2025-01-11 23:59:59 to 2025-01-12 00:00:59 Timechunk-------
+2026-03-28 13:17:47,061 - INFO - Picks saved at /home/blackwinter/projects/eqcct/eqcctpro/results/csv/eqt_noise_th0_1/20250111T235959Z_20250112T000059ZProcess Runtime: 2.46 s
+2026-03-28 13:17:47,067 - INFO - Successfully ran EQCCTPro, exiting...
+2026-03-28 13:17:49,213 - INFO - Ray Successfully Shutdown.
+2026-03-28 13:17:49,213 - INFO - ------- Successfully Picked All Waveform(s) from all Timechunk(s) -------
