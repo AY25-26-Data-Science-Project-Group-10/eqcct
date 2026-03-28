@@ -8,8 +8,6 @@ base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 if base_dir not in sys.path:
     sys.path.insert(0, base_dir)
 
-from eqcctpro import RunEQCCTPro
-
 threshold = 0.1
 seisbench_parent_model = "EQTransformer"
 seisbench_child_model = "original_nonconservative"
@@ -25,6 +23,34 @@ os.makedirs(seisbench_cache_dir, exist_ok=True)
 
 # Keep SeisBench cache inside project tmp to avoid home-directory permission issues.
 os.environ.setdefault("SEISBENCH_CACHE_ROOT", seisbench_cache_dir)
+
+import seisbench.models as sbm
+from eqcctpro import RunEQCCTPro
+
+
+def _patch_seisbench_pretrained_listing_local_first(parent_model_name: str):
+    """
+    Prevent runtime DNS/network failures from SeisBench list_pretrained() calls.
+    EQCCTPro's SeisBench wrapper calls list_pretrained() without arguments, which defaults
+    to remote=True. We patch this model class so default behavior is local cache only.
+    """
+    model_class = getattr(sbm, parent_model_name)
+    if getattr(model_class, "_eqcctpro_local_list_pretrained_patch", False):
+        return
+
+    original_list_pretrained = model_class.list_pretrained.__func__
+
+    @classmethod
+    def _list_pretrained_local_first(cls, *args, **kwargs):
+        if "remote" not in kwargs and len(args) < 2:
+            kwargs["remote"] = False
+        return original_list_pretrained(cls, *args, **kwargs)
+
+    model_class.list_pretrained = _list_pretrained_local_first
+    model_class._eqcctpro_local_list_pretrained_patch = True
+
+
+_patch_seisbench_pretrained_listing_local_first(seisbench_parent_model)
 
 cpu_workers = min(4, os.cpu_count() or 1)
 baseline_ld_library_path = os.environ.get("LD_LIBRARY_PATH", "")
@@ -52,6 +78,15 @@ print(
     f"Using SeisBench model: {seisbench_parent_model}/{seisbench_child_model} "
     f"with thresholds={threshold}"
 )
+
+# Pre-load once in the driver so all per-chunk actor loads can reuse local cache.
+print(
+    f"Preparing local SeisBench cache at: {os.environ['SEISBENCH_CACHE_ROOT']} "
+    f"for {seisbench_parent_model}/{seisbench_child_model}"
+)
+_model_probe = getattr(sbm, seisbench_parent_model).from_pretrained(seisbench_child_model)
+del _model_probe
+
 run_start = time.time()
 failed_predictions = 0
 skipped_folders = 0
@@ -120,6 +155,14 @@ for idx, chunk_dir_name in enumerate(selected_chunk_dirs, start=1):
         failed_predictions += 1
         failed_folder_names.append(chunk_dir_name)
         print(f"[{idx}/{len(selected_chunk_dirs)}] {chunk_dir_name} failed: {exc}")
+    finally:
+        # Safety net: make sure failed runs do not leave Ray workers alive.
+        try:
+            import ray
+            if ray.is_initialized():
+                ray.shutdown()
+        except Exception:
+            pass
 
 total_seconds = time.time() - run_start
 total_minutes = total_seconds / 60.0

@@ -1,0 +1,131 @@
+2026-03-27 23:00:20,036 - INFO - 
+2026-03-27 23:00:20,036 - INFO - ------- Welcome to EQCCTPro -------
+2026-03-27 23:00:20,036 - INFO - 
+2026-03-27 23:00:20,036 - INFO - Running EQCCT over Requested MSeed Files using CPU(s)...
+2026-03-27 23:00:20,037 - INFO - GPU disabled (CPU-only).
+2026-03-27 23:00:20,037 - INFO - Skipping framework-specific initialization in the driver process.
+2026-03-27 23:00:20,049 - INFO - Ray Successfully Initialized with 4 CPU(s) ([0, 1, 2, 3] CPU Affinity Binding).
+2026-03-27 23:00:20,049 - INFO - Analyzing 1 time chunk(s) from 2025-12-28 22:31:50 to 2025-12-28 22:32:50 (dt=1min, overlap=0min).
+2026-03-27 23:00:20,049 - INFO - Using 1 selected station(s).
+2026-03-27 23:00:20,049 - INFO - 
+2026-03-27 23:00:20,049 - INFO - ------- Starting EQCCTPro... -------
+2026-03-27 23:00:20,049 - INFO - Detailed subprocess information can be found in the log file.
+2026-03-27 23:00:20,049 - INFO - 
+2026-03-27 23:00:20,060 - INFO - GPU disabled (CPU-only).
+2026-03-27 23:00:20,395 - INFO - Skipping framework-specific initialization in the driver process.
+2026-03-27 23:00:20,400 - INFO - ------- Hardware Configuration -------
+2026-03-27 23:00:20,403 - INFO - CPU affinity set to cores: [0, 1, 2, 3]
+2026-03-27 23:00:20,406 - INFO - 
+2026-03-27 23:00:20,410 - INFO - ------- Data Preprocessing for EQCCTPro -------
+2026-03-27 23:00:20,413 - INFO - 1 station(s) in /home/blackwinter/projects/eqcct/eqcctpro/data/waveforms_earthquakes_nonoise/20251228T223150Z_20251228T223250Z
+2026-03-27 23:00:20,416 - INFO - Using 1 selected station(s): ['RANF'].
+2026-03-27 23:00:20,418 - INFO - Creating model actor(s)...
+2026-03-27 23:00:20,422 - INFO - System RAM: Total=7870 MB, Available=2936 MB
+2026-03-27 23:00:20,424 - INFO - Usable RAM budget: 7083 MB (90% of total)
+2026-03-27 23:00:20,426 - INFO - ===== MEMORY-AWARE CPU ACTOR POOL =====
+2026-03-27 23:00:20,428 - INFO - Requested concurrent tasks: 1
+2026-03-27 23:00:20,430 - INFO - Available CPUs: 4
+2026-03-27 23:00:20,434 - INFO - Available RAM: 7083 MB
+2026-03-27 23:00:20,436 - INFO - RAM per model: 2060 MB
+2026-03-27 23:00:20,438 - INFO - Max actors by RAM: 3
+2026-03-27 23:00:20,441 - INFO - Creating 1 SeisBenchModelActor(s)
+2026-03-27 23:00:20,443 - INFO - Let Ray handle scheduling (taskset already restricts CPU visibility)
+2026-03-27 23:00:20,446 - INFO - Creating SeisBenchModelActor 1/1 (2.01GB RAM each)...
+2026-03-27 23:00:42,840 - ERROR - Failed to create SeisBenchModelActor 1: The actor died because of an error raised in its creation task, [36mray::SeisBenchModelActor.__init__()[39m (pid=18524, ip=172.17.203.137, actor_id=c983621371edfcb0c7c2dabd01000000, repr=<eqcctpro.parallelization.SeisBenchModelActor object at 0x7f0860424cd0>)
+  File "/home/blackwinter/miniforge3/envs/eqcctpro-torch/lib/python3.10/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+  File "/home/blackwinter/miniforge3/envs/eqcctpro-torch/lib/python3.10/socket.py", line 967, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+
+[36mray::SeisBenchModelActor.__init__()[39m (pid=18524, ip=172.17.203.137, actor_id=c983621371edfcb0c7c2dabd01000000, repr=<eqcctpro.parallelization.SeisBenchModelActor object at 0x7f0860424cd0>)
+  File "/home/blackwinter/miniforge3/envs/eqcctpro-torch/lib/python3.10/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+  File "/home/blackwinter/miniforge3/envs/eqcctpro-torch/lib/python3.10/site-packages/urllib3/connectionpool.py", line 488, in _make_request
+    raise new_e
+  File "/home/blackwinter/miniforge3/envs/eqcctpro-torch/lib/python3.10/site-packages/urllib3/connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+  File "/home/blackwinter/miniforge3/envs/eqcctpro-torch/lib/python3.10/site-packages/urllib3/connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+  File "/home/blackwinter/miniforge3/envs/eqcctpro-torch/lib/python3.10/site-packages/urllib3/connection.py", line 759, in connect
+    self.sock = sock = self._new_conn()
+  File "/home/blackwinter/miniforge3/envs/eqcctpro-torch/lib/python3.10/site-packages/urllib3/connection.py", line 211, in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+urllib3.exceptions.NameResolutionError: HTTPSConnection(host='hifis-storage.desy.de', port=2880): Failed to resolve 'hifis-storage.desy.de' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+
+[36mray::SeisBenchModelActor.__init__()[39m (pid=18524, ip=172.17.203.137, actor_id=c983621371edfcb0c7c2dabd01000000, repr=<eqcctpro.parallelization.SeisBenchModelActor object at 0x7f0860424cd0>)
+  File "/home/blackwinter/miniforge3/envs/eqcctpro-torch/lib/python3.10/site-packages/requests/adapters.py", line 645, in send
+    resp = conn.urlopen(
+  File "/home/blackwinter/miniforge3/envs/eqcctpro-torch/lib/python3.10/site-packages/urllib3/connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+  File "/home/blackwinter/miniforge3/envs/eqcctpro-torch/lib/python3.10/site-packages/urllib3/util/retry.py", line 535, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='hifis-storage.desy.de', port=2880): Max retries exceeded with url: /Helmholtz/HelmholtzAI/SeisBench/models/v3/eqtransformer (Caused by NameResolutionError("HTTPSConnection(host='hifis-storage.desy.de', port=2880): Failed to resolve 'hifis-storage.desy.de' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+
+[36mray::SeisBenchModelActor.__init__()[39m (pid=18524, ip=172.17.203.137, actor_id=c983621371edfcb0c7c2dabd01000000, repr=<eqcctpro.parallelization.SeisBenchModelActor object at 0x7f0860424cd0>)
+  File "/home/blackwinter/projects/eqcct/eqcctpro/eqcctpro/parallelization.py", line 1775, in __init__
+    self.model_wrapper = SeisBenchModels(parent_model_name, child_model_name)
+  File "/home/blackwinter/projects/eqcct/eqcctpro/eqcctpro/seisbench_models.py", line 22, in __init__
+    available_models = model_class.list_pretrained()
+  File "/home/blackwinter/miniforge3/envs/eqcctpro-torch/lib/python3.10/site-packages/seisbench/models/base.py", line 728, in list_pretrained
+    remote_list = seisbench.util.ls_webdav(remote_path)
+  File "/home/blackwinter/miniforge3/envs/eqcctpro-torch/lib/python3.10/site-packages/seisbench/util/file.py", line 170, in ls_webdav
+    ret = sess.send(prep)
+  File "/home/blackwinter/miniforge3/envs/eqcctpro-torch/lib/python3.10/site-packages/requests/sessions.py", line 706, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/blackwinter/miniforge3/envs/eqcctpro-torch/lib/python3.10/site-packages/requests/adapters.py", line 678, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hifis-storage.desy.de', port=2880): Max retries exceeded with url: /Helmholtz/HelmholtzAI/SeisBench/models/v3/eqtransformer (Caused by NameResolutionError("HTTPSConnection(host='hifis-storage.desy.de', port=2880): Failed to resolve 'hifis-storage.desy.de' ([Errno -3] Temporary failure in name resolution)"))
+2026-03-28 05:17:12,159 - INFO - 
+2026-03-28 05:17:12,160 - INFO - ------- Welcome to EQCCTPro -------
+2026-03-28 05:17:12,160 - INFO - 
+2026-03-28 05:17:12,161 - INFO - Running EQCCT over Requested MSeed Files using CPU(s)...
+2026-03-28 05:17:12,161 - INFO - GPU disabled (CPU-only).
+2026-03-28 05:17:12,161 - INFO - Skipping framework-specific initialization in the driver process.
+2026-03-28 05:17:14,709 - INFO - Ray Successfully Initialized with 4 CPU(s) ([0, 1, 2, 3] CPU Affinity Binding).
+2026-03-28 05:17:14,709 - INFO - Analyzing 1 time chunk(s) from 2025-12-28 22:31:50 to 2025-12-28 22:32:50 (dt=1min, overlap=0min).
+2026-03-28 05:17:14,710 - INFO - Using 1 selected station(s).
+2026-03-28 05:17:14,710 - INFO - 
+2026-03-28 05:17:14,710 - INFO - ------- Starting EQCCTPro... -------
+2026-03-28 05:17:14,711 - INFO - Detailed subprocess information can be found in the log file.
+2026-03-28 05:17:14,711 - INFO - 
+2026-03-28 05:17:14,999 - INFO - GPU disabled (CPU-only).
+2026-03-28 05:17:15,004 - INFO - Skipping framework-specific initialization in the driver process.
+2026-03-28 05:17:15,008 - INFO - ------- Hardware Configuration -------
+2026-03-28 05:17:15,010 - INFO - CPU affinity set to cores: [0, 1, 2, 3]
+2026-03-28 05:17:15,013 - INFO - 
+2026-03-28 05:17:15,016 - INFO - ------- Data Preprocessing for EQCCTPro -------
+2026-03-28 05:17:15,018 - INFO - 1 station(s) in /home/blackwinter/projects/eqcct/eqcctpro/data/waveforms_earthquakes_nonoise/20251228T223150Z_20251228T223250Z
+2026-03-28 05:17:15,021 - INFO - Using 1 selected station(s): ['RANF'].
+2026-03-28 05:17:15,023 - INFO - Creating model actor(s)...
+2026-03-28 05:17:15,025 - INFO - System RAM: Total=7870 MB, Available=4702 MB
+2026-03-28 05:17:15,027 - INFO - Usable RAM budget: 7083 MB (90% of total)
+2026-03-28 05:17:15,030 - INFO - ===== MEMORY-AWARE CPU ACTOR POOL =====
+2026-03-28 05:17:15,032 - INFO - Requested concurrent tasks: 1
+2026-03-28 05:17:15,035 - INFO - Available CPUs: 4
+2026-03-28 05:17:15,037 - INFO - Available RAM: 7083 MB
+2026-03-28 05:17:15,040 - INFO - RAM per model: 2060 MB
+2026-03-28 05:17:15,042 - INFO - Max actors by RAM: 3
+2026-03-28 05:17:15,045 - INFO - Creating 1 SeisBenchModelActor(s)
+2026-03-28 05:17:15,047 - INFO - Let Ray handle scheduling (taskset already restricts CPU visibility)
+2026-03-28 05:17:15,050 - INFO - Creating SeisBenchModelActor 1/1 (2.01GB RAM each)...
+2026-03-28 05:17:21,492 - INFO - SeisBenchModelActor 1 created successfully.
+2026-03-28 05:17:21,494 - INFO - Created 1 CPU actor(s). Task queue will handle concurrency.
+2026-03-28 05:17:21,496 - INFO - Starting EQCCTPro parallelized waveform processing...
+2026-03-28 05:17:21,499 - INFO - 
+2026-03-28 05:17:21,500 - INFO - ------- Analyzing Seismic Waveforms for P and S Picks via SeisBench (EQTransformer - original_nonconservative) -------
+2026-03-28 05:17:21,503 - INFO - Analyzing 0:01:00 minute timechunk from 2025-12-28 22:31:50 to 2025-12-28 22:32:50 (0 min overlap)
+2026-03-28 05:17:21,505 - INFO - Processing a total of 1 stations, 1 at a time.
+2026-03-28 05:17:23,596 - INFO - (1/1) RANF: Finished the prediction in 0.12s. (HP=1.0, LP=45.0, picks=2)
+2026-03-28 05:17:23,599 - INFO - 
+2026-03-28 05:17:23,601 - INFO - ------- Parallel Station Waveform Processing Complete For 2025-12-28 22:31:50 to 2025-12-28 22:32:50 Timechunk-------
+2026-03-28 05:17:23,604 - INFO - Picks saved at /home/blackwinter/projects/eqcct/eqcctpro/results/csv/eqt_earthquakes_th0_1/20251228T223150Z_20251228T223250ZProcess Runtime: 2.10 s
+2026-03-28 05:17:23,608 - INFO - Successfully ran EQCCTPro, exiting...
+2026-03-28 05:17:25,316 - INFO - Ray Successfully Shutdown.
+2026-03-28 05:17:25,316 - INFO - ------- Successfully Picked All Waveform(s) from all Timechunk(s) -------
