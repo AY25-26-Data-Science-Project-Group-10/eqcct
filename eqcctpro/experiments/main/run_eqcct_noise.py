@@ -11,7 +11,7 @@ if base_dir not in sys.path:
 from eqcctpro import RunEQCCTPro
 
 input_mseed_directory_path = os.path.join(base_dir, "data/waveforms_noise_only")
-output_root_directory_path = os.path.join(base_dir, "results/csv/bm_noise_only")
+output_root_directory_path = os.path.join(base_dir, "results/csv/eqcct_noise_th0_1")
 models_dir = os.path.join(base_dir, "models/EQCCT")
 tmp_dir = os.path.join(base_dir, "tmp")
 
