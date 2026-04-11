@@ -677,6 +677,8 @@ def _save_and_plot_eqcct_probability_traces(
                     comp_axes = [ax_e, ax_n, ax_z]
                     comp_labels = ["E", "N", "Z"]
                     comp_colors = ["tab:green", "tab:red", "tab:gray"]
+                    p_pick_sec = (int(p_pick) / 100.0) if p_pick is not None else None
+                    s_pick_sec = (int(s_pick) / 100.0) if s_pick is not None else None
 
                     for comp_idx, (ax_wave, comp_label, comp_color) in enumerate(
                         zip(comp_axes, comp_labels, comp_colors)
@@ -699,9 +701,14 @@ def _save_and_plot_eqcct_probability_traces(
                                 va="center",
                                 fontsize=tick_fs,
                             )
-                        ax_wave.set_ylabel(f"{comp_label} Amp", fontsize=label_fs)
+                        ax_wave.set_ylabel(f"{comp_label} Component", fontsize=label_fs)
                         ax_wave.tick_params(axis="both", which="major", labelsize=tick_fs)
                         ax_wave.grid(alpha=0.2)
+                        # Mark picks on waveform panels with dashed vertical lines (no text labels).
+                        if p_pick_sec is not None and 0.0 <= p_pick_sec <= rel_seconds_wave[-1]:
+                            ax_wave.axvline(x=p_pick_sec, linestyle="--", linewidth=1.0, color="tab:blue", alpha=0.9)
+                        if s_pick_sec is not None and 0.0 <= s_pick_sec <= rel_seconds_wave[-1]:
+                            ax_wave.axvline(x=s_pick_sec, linestyle="--", linewidth=1.0, color="tab:orange", alpha=0.9)
 
                     ax_e.set_title(
                         f"EQCCT waveform + probability | station={meta.get('receiver_code', 'unknown')} | start={start_time_raw}",
