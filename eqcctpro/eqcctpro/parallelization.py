@@ -522,6 +522,7 @@ def _save_and_plot_eqcct_probability_traces(
     predP,
     predS,
     args,
+    data_set=None,
     p_picks_csv=None,
     p_probs_csv=None,
     s_picks_csv=None,
@@ -554,7 +555,9 @@ def _save_and_plot_eqcct_probability_traces(
 
     if plot_probability_traces:
         plots_dir = os.path.join(save_dir, "probability_trace_plots")
+        combined_plots_dir = os.path.join(save_dir, "waveform_and_probability_trace_plots")
         os.makedirs(plots_dir, exist_ok=True)
+        os.makedirs(combined_plots_dir, exist_ok=True)
         try:
             import matplotlib
             matplotlib.use("Agg")
@@ -594,6 +597,43 @@ def _save_and_plot_eqcct_probability_traces(
             title_fs = 14
             annotation_fs = 12
 
+            # Exact picks/probabilities that were written to X_prediction_results.csv.
+            p_pick = p_picks_csv[ix] if ix < len(p_picks_csv) else None
+            p_prob = p_probs_csv[ix] if ix < len(p_probs_csv) else None
+            s_pick = s_picks_csv[ix] if ix < len(s_picks_csv) else None
+            s_prob = s_probs_csv[ix] if ix < len(s_probs_csv) else None
+
+            def _annotate_csv_picks(ax_obj):
+                if p_pick is not None and p_prob is not None:
+                    p_idx = int(p_pick)
+                    if 0 <= p_idx < n_samples:
+                        p_sec = p_idx / 100.0
+                        p_prob_f = float(p_prob)
+                        ax_obj.scatter([p_sec], [p_prob_f], color="tab:blue", s=24, zorder=4)
+                        ax_obj.annotate(
+                            f"P {p_prob_f:.3f}",
+                            (p_sec, p_prob_f),
+                            textcoords="offset points",
+                            xytext=(6, 8),
+                            fontsize=annotation_fs,
+                            color="tab:blue",
+                        )
+
+                if s_pick is not None and s_prob is not None:
+                    s_idx = int(s_pick)
+                    if 0 <= s_idx < n_samples:
+                        s_sec = s_idx / 100.0
+                        s_prob_f = float(s_prob)
+                        ax_obj.scatter([s_sec], [s_prob_f], color="tab:orange", s=24, zorder=4)
+                        ax_obj.annotate(
+                            f"S {s_prob_f:.3f}",
+                            (s_sec, s_prob_f),
+                            textcoords="offset points",
+                            xytext=(6, -14),
+                            fontsize=annotation_fs,
+                            color="tab:orange",
+                        )
+
             fig, ax = plt.subplots(figsize=(12, 4))
             ax.plot(rel_seconds, p_trace[:n_samples], label="P probability", linewidth=1.0)
             ax.plot(rel_seconds, s_trace[:n_samples], label="S probability", linewidth=1.0)
@@ -609,48 +649,84 @@ def _save_and_plot_eqcct_probability_traces(
             ax.tick_params(axis="both", which="major", labelsize=tick_fs)
             ax.legend(loc="upper right", fontsize=legend_fs)
             ax.grid(alpha=0.2)
-
-            # Annotate the exact picks/probabilities that are written to X_prediction_results.csv.
-            p_pick = p_picks_csv[ix] if ix < len(p_picks_csv) else None
-            p_prob = p_probs_csv[ix] if ix < len(p_probs_csv) else None
-            s_pick = s_picks_csv[ix] if ix < len(s_picks_csv) else None
-            s_prob = s_probs_csv[ix] if ix < len(s_probs_csv) else None
-
-            if p_pick is not None and p_prob is not None:
-                p_idx = int(p_pick)
-                if 0 <= p_idx < n_samples:
-                    p_sec = p_idx / 100.0
-                    p_prob_f = float(p_prob)
-                    ax.scatter([p_sec], [p_prob_f], color="tab:blue", s=24, zorder=4)
-                    ax.annotate(
-                        f"P {p_prob_f:.3f}",
-                        (p_sec, p_prob_f),
-                        textcoords="offset points",
-                        xytext=(6, 8),
-                        fontsize=annotation_fs,
-                        color="tab:blue",
-                    )
-
-            if s_pick is not None and s_prob is not None:
-                s_idx = int(s_pick)
-                if 0 <= s_idx < n_samples:
-                    s_sec = s_idx / 100.0
-                    s_prob_f = float(s_prob)
-                    ax.scatter([s_sec], [s_prob_f], color="tab:orange", s=24, zorder=4)
-                    ax.annotate(
-                        f"S {s_prob_f:.3f}",
-                        (s_sec, s_prob_f),
-                        textcoords="offset points",
-                        xytext=(6, -14),
-                        fontsize=annotation_fs,
-                        color="tab:orange",
-                    )
+            _annotate_csv_picks(ax)
 
             fig.tight_layout()
 
             plot_path = os.path.join(plots_dir, f"probability_trace_{ix:04d}_{start_time_safe}.png")
             fig.savefig(plot_path, dpi=120)
             plt.close(fig)
+
+            # Additional plot requested: waveform panel (top) + probability panel (bottom).
+            waveform_window = None
+            if isinstance(data_set, dict):
+                waveform_window = data_set.get(start_time_raw)
+            if waveform_window is not None:
+                waveform_window = np.asarray(waveform_window)
+                if waveform_window.ndim == 2 and waveform_window.shape[0] > 0:
+                    n_wave = min(n_samples, waveform_window.shape[0])
+                    rel_seconds_wave = np.arange(n_wave, dtype=float) / 100.0
+                    fig2, (ax_e, ax_n, ax_z, ax_prob) = plt.subplots(
+                        4,
+                        1,
+                        figsize=(12, 10),
+                        sharex=True,
+                        gridspec_kw={"height_ratios": [1.5, 1.5, 1.5, 2.0]},
+                    )
+
+                    comp_axes = [ax_e, ax_n, ax_z]
+                    comp_labels = ["E", "N", "Z"]
+                    comp_colors = ["tab:green", "tab:red", "tab:gray"]
+
+                    for comp_idx, (ax_wave, comp_label, comp_color) in enumerate(
+                        zip(comp_axes, comp_labels, comp_colors)
+                    ):
+                        if waveform_window.shape[1] > comp_idx:
+                            ax_wave.plot(
+                                rel_seconds_wave,
+                                waveform_window[:n_wave, comp_idx],
+                                linewidth=0.8,
+                                color=comp_color,
+                                alpha=0.9,
+                            )
+                        else:
+                            ax_wave.text(
+                                0.5,
+                                0.5,
+                                f"{comp_label} component unavailable",
+                                transform=ax_wave.transAxes,
+                                ha="center",
+                                va="center",
+                                fontsize=tick_fs,
+                            )
+                        ax_wave.set_ylabel(f"{comp_label} Amp", fontsize=label_fs)
+                        ax_wave.tick_params(axis="both", which="major", labelsize=tick_fs)
+                        ax_wave.grid(alpha=0.2)
+
+                    ax_e.set_title(
+                        f"EQCCT waveform + probability | station={meta.get('receiver_code', 'unknown')} | start={start_time_raw}",
+                        fontsize=title_fs,
+                    )
+
+                    ax_prob.plot(rel_seconds, p_trace[:n_samples], label="P probability", linewidth=1.0)
+                    ax_prob.plot(rel_seconds, s_trace[:n_samples], label="S probability", linewidth=1.0)
+                    ax_prob.axhline(y=p_thr, linestyle="--", linewidth=0.8, label=f"P threshold ({p_thr:g})")
+                    ax_prob.axhline(y=s_thr, linestyle=":", linewidth=0.8, label=f"S threshold ({s_thr:g})")
+                    ax_prob.set_xlabel("Seconds from window start", fontsize=label_fs)
+                    ax_prob.set_ylabel("Probability", fontsize=label_fs)
+                    ax_prob.set_ylim(0.0, 1.05)
+                    ax_prob.tick_params(axis="both", which="major", labelsize=tick_fs)
+                    ax_prob.legend(loc="upper right", fontsize=legend_fs)
+                    ax_prob.grid(alpha=0.2)
+                    _annotate_csv_picks(ax_prob)
+
+                    fig2.tight_layout()
+                    combined_plot_path = os.path.join(
+                        combined_plots_dir,
+                        f"waveform_probability_trace_{ix:04d}_{start_time_safe}.png",
+                    )
+                    fig2.savefig(combined_plot_path, dpi=120)
+                    plt.close(fig2)
 # CHANGE MARKER [EQCCT_TRACE_OUTPUT] END
 
 
@@ -2253,6 +2329,7 @@ def parallel_predict(predict_args, model_actor, gpu=False):
             predP,
             predS,
             args,
+            data_set=data_set,
             p_picks_csv=p_picks_csv,
             p_probs_csv=p_probs_csv,
             s_picks_csv=s_picks_csv,
@@ -2404,6 +2481,7 @@ def ripper_parallel_predict_eqcct(predict_args, gpu=False, gpu_memory_limit_mb=N
             predP,
             predS,
             args,
+            data_set=data_set,
             p_picks_csv=p_picks_csv,
             p_probs_csv=p_probs_csv,
             s_picks_csv=s_picks_csv,

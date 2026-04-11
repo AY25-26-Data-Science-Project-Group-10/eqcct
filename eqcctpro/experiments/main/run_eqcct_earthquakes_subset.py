@@ -21,7 +21,7 @@ SUBSET_START_INDEX = 0
 SUBSET_END_INDEX_EXCLUSIVE = 10
 
 # Optional: run exactly one timestamp folder by name (set to None to disable).
-# Example: "20250106T122712Z_20250106T122812Z"
+# Example: "20250106T190201Z_20250106T190301Z"
 SPECIFIC_TIMESTAMP_FOLDER = None
 
 # Prediction threshold for both P and S picks.
