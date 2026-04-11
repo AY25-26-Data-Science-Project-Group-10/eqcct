@@ -10,12 +10,18 @@ if base_dir not in sys.path:
 from eqcctpro import RunEQCCTPro
 
 input_mseed_directory_path = os.path.join(base_dir, "data/waveforms_earthquakes_nonoise")
-output_root_directory_path = os.path.join(base_dir, "results/csv/bm_eq_nonoise_subset")
+output_root_directory_path = os.path.join(base_dir, "results/csv/eqcct_earthquakes_subset")
 models_dir = os.path.join(base_dir, "models/EQCCT")
 tmp_dir = os.path.join(base_dir, "tmp")
 
-# How many timestamp folders to run from the dataset.
-N_SUBSET_TIMESTAMPS = 10
+# Timestamp-folder subset to run from the dataset.
+# Uses Python slicing semantics: [SUBSET_START_INDEX:SUBSET_END_INDEX_EXCLUSIVE].
+# Default: first 10 folders.
+SUBSET_START_INDEX = 0
+SUBSET_END_INDEX_EXCLUSIVE = 10
+
+# Prediction threshold for both P and S picks.
+PICK_THRESHOLD = 0.1
 
 os.makedirs(output_root_directory_path, exist_ok=True)
 os.makedirs(tmp_dir, exist_ok=True)
@@ -35,7 +41,15 @@ chunk_dirs = sorted(
     d for d in os.listdir(input_mseed_directory_path)
     if os.path.isdir(os.path.join(input_mseed_directory_path, d))
 )
-selected_chunk_dirs = chunk_dirs[:N_SUBSET_TIMESTAMPS]
+if SUBSET_START_INDEX < 0:
+    raise ValueError("SUBSET_START_INDEX must be >= 0.")
+if (
+    SUBSET_END_INDEX_EXCLUSIVE is not None
+    and SUBSET_END_INDEX_EXCLUSIVE < SUBSET_START_INDEX
+):
+    raise ValueError("SUBSET_END_INDEX_EXCLUSIVE must be >= SUBSET_START_INDEX.")
+
+selected_chunk_dirs = chunk_dirs[SUBSET_START_INDEX:SUBSET_END_INDEX_EXCLUSIVE]
 
 if not selected_chunk_dirs:
     raise RuntimeError(f"No timestamp folders found under: {input_mseed_directory_path}")
@@ -76,8 +90,8 @@ for idx, chunk_dir_name in enumerate(selected_chunk_dirs, start=1):
         specific_stations=specific_stations,
         number_of_concurrent_station_predictions=1,
         number_of_concurrent_timechunk_predictions=1,
-        P_threshold=0.1,
-        S_threshold=0.1,
+        P_threshold=PICK_THRESHOLD,
+        S_threshold=PICK_THRESHOLD,
         start_time=start_time,
         end_time=end_time,
         timechunk_dt=1,
