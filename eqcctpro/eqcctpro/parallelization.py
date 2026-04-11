@@ -515,6 +515,76 @@ def _output_writter_prediction(meta, csvPr, Ppicks, Pprob, Spicks, Sprob, detect
     return detection_memory,prob_memory  
 
 
+# CHANGE MARKER [EQCCT_TRACE_OUTPUT] BEGIN
+def _save_and_plot_eqcct_probability_traces(meta, save_dir, predP, predS, args):
+    """
+    Optional EQCCT-only artifact writer for probability traces.
+    Default behavior remains unchanged because both controls are False by default.
+    """
+    save_probability_traces = bool(args.get("save_probability_traces", False))
+    plot_probability_traces = bool(args.get("plot_probability_traces", False))
+
+    if not save_probability_traces and not plot_probability_traces:
+        return
+
+    # Squeeze from (n_windows, n_samples, 1) -> (n_windows, n_samples)
+    p_probs = np.squeeze(np.asarray(predP), axis=-1) if np.asarray(predP).ndim == 3 else np.asarray(predP)
+    s_probs = np.squeeze(np.asarray(predS), axis=-1) if np.asarray(predS).ndim == 3 else np.asarray(predS)
+    trace_start_times = np.array(meta.get("trace_start_time", []), dtype=str)
+
+    if save_probability_traces:
+        traces_npz_path = os.path.join(save_dir, "X_probability_traces.npz")
+        np.savez_compressed(
+            traces_npz_path,
+            p_probabilities=p_probs,
+            s_probabilities=s_probs,
+            trace_start_time=trace_start_times,
+            sample_rate_hz=100.0
+        )
+
+    if plot_probability_traces:
+        plots_dir = os.path.join(save_dir, "probability_trace_plots")
+        os.makedirs(plots_dir, exist_ok=True)
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+        except Exception:
+            return
+
+        n_windows = min(len(p_probs), len(s_probs))
+        for ix in range(n_windows):
+            p_trace = p_probs[ix]
+            s_trace = s_probs[ix]
+            n_samples = min(len(p_trace), len(s_trace))
+            if n_samples == 0:
+                continue
+
+            rel_seconds = np.arange(n_samples, dtype=float) / 100.0
+            p_thr = float(args.get("P_threshold", 0.0))
+            s_thr = float(args.get("S_threshold", 0.0))
+            start_time_raw = str(trace_start_times[ix]) if ix < len(trace_start_times) else f"window_{ix:04d}"
+            start_time_safe = start_time_raw.replace(" ", "_").replace(":", "-")
+
+            fig, ax = plt.subplots(figsize=(12, 4))
+            ax.plot(rel_seconds, p_trace[:n_samples], label="P probability", linewidth=1.0)
+            ax.plot(rel_seconds, s_trace[:n_samples], label="S probability", linewidth=1.0)
+            ax.axhline(y=p_thr, linestyle="--", linewidth=0.8, label=f"P threshold ({p_thr:g})")
+            ax.axhline(y=s_thr, linestyle=":", linewidth=0.8, label=f"S threshold ({s_thr:g})")
+            ax.set_xlabel("Seconds from window start")
+            ax.set_ylabel("Probability")
+            ax.set_ylim(0.0, 1.05)
+            ax.set_title(f"EQCCT probability traces | station={meta.get('receiver_code', 'unknown')} | start={start_time_raw}")
+            ax.legend(loc="upper right")
+            ax.grid(alpha=0.2)
+            fig.tight_layout()
+
+            plot_path = os.path.join(plots_dir, f"probability_trace_{ix:04d}_{start_time_safe}.png")
+            fig.savefig(plot_path, dpi=120)
+            plt.close(fig)
+# CHANGE MARKER [EQCCT_TRACE_OUTPUT] END
+
+
 def _get_snr(data, pat, window=200):
     
     """ 
@@ -808,6 +878,10 @@ def mseed_predictor(input_dir='downloads_mseeds',
               seisbench_parent_model=None,
               seisbench_child_model=None,
               Detection_threshold=0.3,
+              # CHANGE MARKER [EQCCT_TRACE_OUTPUT]:
+              # Optional EQCCT-only artifacts (defaults keep original behavior)
+              save_probability_traces=False,
+              plot_probability_traces=False,
               # Ripper mode - uses old task-based approach instead of ModelActors
               ripper=False): 
     
@@ -894,7 +968,10 @@ def mseed_predictor(input_dir='downloads_mseeds',
     "model_type": model_type,
     "seisbench_parent_model": seisbench_parent_model,
     "seisbench_child_model": seisbench_child_model,
-    "Detection_threshold": Detection_threshold
+    "Detection_threshold": Detection_threshold,
+    # CHANGE MARKER [EQCCT_TRACE_OUTPUT]
+    "save_probability_traces": save_probability_traces,
+    "plot_probability_traces": plot_probability_traces
     }
 
     logger.info(f"------- Hardware Configuration -------")
@@ -2082,6 +2159,8 @@ def parallel_predict(predict_args, model_actor, gpu=False):
         # predP, predS = ray.get(model_actor.predict.remote(pred_generator))\
         predP, predS = ray.get(model_actor.predict_from_arrays.remote(
                             meta["trace_start_time"], data_set, args["batch_size"], args["normalization_mode"]))
+        # CHANGE MARKER [EQCCT_TRACE_OUTPUT]
+        _save_and_plot_eqcct_probability_traces(meta, save_dir, predP, predS, args)
         
         detection_memory = []
         prob_memory = []
@@ -2214,6 +2293,8 @@ def ripper_parallel_predict_eqcct(predict_args, gpu=False, gpu_memory_limit_mb=N
         
         # RIPPER MODE: Use the locally loaded model directly
         predP, predS = model.predict(pred_generator, verbose=0)
+        # CHANGE MARKER [EQCCT_TRACE_OUTPUT]
+        _save_and_plot_eqcct_probability_traces(meta, save_dir, predP, predS, args)
         
         detection_memory = []
         prob_memory = []

@@ -23,6 +23,11 @@ SUBSET_END_INDEX_EXCLUSIVE = 10
 # Prediction threshold for both P and S picks.
 PICK_THRESHOLD = 0.1
 
+# CHANGE MARKER [EQCCT_TRACE_OUTPUT]:
+# Optional EQCCT probability-traces.
+SAVE_PROBABILITY_TRACES = True
+PLOT_PROBABILITY_TRACES = True
+
 os.makedirs(output_root_directory_path, exist_ok=True)
 os.makedirs(tmp_dir, exist_ok=True)
 
@@ -92,6 +97,8 @@ for idx, chunk_dir_name in enumerate(selected_chunk_dirs, start=1):
         number_of_concurrent_timechunk_predictions=1,
         P_threshold=PICK_THRESHOLD,
         S_threshold=PICK_THRESHOLD,
+        save_probability_traces=SAVE_PROBABILITY_TRACES,
+        plot_probability_traces=PLOT_PROBABILITY_TRACES,
         start_time=start_time,
         end_time=end_time,
         timechunk_dt=1,

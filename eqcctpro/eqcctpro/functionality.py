@@ -23,6 +23,7 @@ from obspy import UTCDateTime
 from ray.util.queue import Queue
 from datetime import datetime, timedelta
 from eqcctpro.tools import _parse_gpus_field
+from eqcctpro.tools import build_memory_trial_data, get_memory_snapshot
 from logging.handlers import QueueHandler, QueueListener
 
 
@@ -58,6 +59,10 @@ class RunEQCCTPro():
                 seisbench_parent_model: str = None,  # e.g., 'PhaseNet', 'EQTransformer'
                 seisbench_child_model: str = None,  # e.g., 'original', 'stead'
                 Detection_threshold: float = 0.3,  # Detection threshold for SeisBench models
+                # CHANGE MARKER [EQCCT_TRACE_OUTPUT]:
+                # Optional EQCCT-only probability trace artifacts (default OFF for unchanged behavior)
+                save_probability_traces: bool = False,
+                plot_probability_traces: bool = False,
                 # Ripper mode - uses old task-based approach instead of ModelActors
                 ripper: bool = False):  # If True, use task-based parallel_predict instead of ModelActor pool
          
@@ -92,6 +97,9 @@ class RunEQCCTPro():
         self.seisbench_parent_model = seisbench_parent_model
         self.seisbench_child_model = seisbench_child_model
         self.Detection_threshold = Detection_threshold
+        # CHANGE MARKER [EQCCT_TRACE_OUTPUT]
+        self.save_probability_traces = save_probability_traces
+        self.plot_probability_traces = plot_probability_traces
         
         # Ripper mode - uses old task-based approach instead of ModelActors
         self.ripper = ripper
@@ -287,6 +295,9 @@ class RunEQCCTPro():
                                         intra_threads=self.intra_threads, inter_threads=self.inter_threads,
                                         model_type=self.model_type, seisbench_parent_model=self.seisbench_parent_model, 
                                         seisbench_child_model=self.seisbench_child_model, Detection_threshold=self.Detection_threshold,
+                                        # CHANGE MARKER [EQCCT_TRACE_OUTPUT]
+                                        save_probability_traces=self.save_probability_traces,
+                                        plot_probability_traces=self.plot_probability_traces,
                                         ripper=self.ripper))
                     break
                 
@@ -316,13 +327,17 @@ class RunEQCCTPro():
         # Set CPU affinity
         process = psutil.Process(os.getpid())
         process.cpu_affinity(self.cpu_id_list)  # Limit process to the given CPU IDs
+
+        # Ensure Ray workers import this local eqcctpro source tree, not a stale site-packages install.
+        local_eqcctpro_module_dir = str(Path(__file__).resolve().parent)
+        ray_runtime_env = {"py_modules": [local_eqcctpro_module_dir]}
         
         self.chunk_time() # Generates the UTC times for each of the timesets in the given time range 
         self.dt_task_generator() # Generates the task list so can know how many total tasks there are for our given time range 
         
         if self.use_gpu: # GPU
             self.configure_gpu()
-            ray.init(ignore_reinit_error=True, num_gpus=len(self.selected_gpus), num_cpus=len(self.cpu_id_list), logging_level=logging.ERROR, log_to_driver=False, _temp_dir=self.home_tmp_dir) # Ray initalization using GPUs 
+            ray.init(ignore_reinit_error=True, num_gpus=len(self.selected_gpus), num_cpus=len(self.cpu_id_list), logging_level=logging.ERROR, log_to_driver=False, _temp_dir=self.home_tmp_dir, runtime_env=ray_runtime_env) # Ray initalization using GPUs 
             self.log_queue = Queue() # Create a Ray-safe queue to recieve LogRecord objects from workers so we can write them to file 
             self._log_thread = threading.Thread(target=self._drain_worker_logs, daemon=True) # Creates background thread whose only job is to get() records from self.log_queue and hand them over to the actual logger
             self._log_thread.start() # Starts the thread
@@ -336,7 +351,7 @@ class RunEQCCTPro():
 
         else: # CPU
             self.configure_cpu()
-            ray.init(ignore_reinit_error=True, num_cpus=len(self.cpu_id_list), logging_level=logging.ERROR, log_to_driver=False, _temp_dir=self.home_tmp_dir) # Ray initalization using CPUs
+            ray.init(ignore_reinit_error=True, num_cpus=len(self.cpu_id_list), logging_level=logging.ERROR, log_to_driver=False, _temp_dir=self.home_tmp_dir, runtime_env=ray_runtime_env) # Ray initalization using CPUs
             self.log_queue = Queue() # Create a Ray-safe queue to recieve LogRecord objects from workers so we can write them to file 
             self._log_thread = threading.Thread(target=self._drain_worker_logs, daemon=True) # Creates background thread whose only job is to get() records from self.log_queue and hand them over to the actual logger
             self._log_thread.start() # Starts the thread
