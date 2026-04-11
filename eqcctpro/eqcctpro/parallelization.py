@@ -516,7 +516,17 @@ def _output_writter_prediction(meta, csvPr, Ppicks, Pprob, Spicks, Sprob, detect
 
 
 # CHANGE MARKER [EQCCT_TRACE_OUTPUT] BEGIN
-def _save_and_plot_eqcct_probability_traces(meta, save_dir, predP, predS, args):
+def _save_and_plot_eqcct_probability_traces(
+    meta,
+    save_dir,
+    predP,
+    predS,
+    args,
+    p_picks_csv=None,
+    p_probs_csv=None,
+    s_picks_csv=None,
+    s_probs_csv=None,
+):
     """
     Optional EQCCT-only artifact writer for probability traces.
     Default behavior remains unchanged because both controls are False by default.
@@ -552,6 +562,19 @@ def _save_and_plot_eqcct_probability_traces(meta, save_dir, predP, predS, args):
         except Exception:
             return
 
+        # Fallback: if caller did not provide the exact picks written to CSV,
+        # compute with the same picker logic used by CSV generation.
+        n_windows_total = min(len(p_probs), len(s_probs))
+        if p_picks_csv is None or p_probs_csv is None or s_picks_csv is None or s_probs_csv is None:
+            p_picks_csv, p_probs_csv, s_picks_csv, s_probs_csv = [], [], [], []
+            for ix in range(n_windows_total):
+                Ppicks, Pprob = _picker(args, p_probs[ix])
+                Spicks, Sprob = _picker(args, s_probs[ix], "S_threshold")
+                p_picks_csv.append(Ppicks[0] if Ppicks else None)
+                p_probs_csv.append(Pprob[0] if Pprob else None)
+                s_picks_csv.append(Spicks[0] if Spicks else None)
+                s_probs_csv.append(Sprob[0] if Sprob else None)
+
         n_windows = min(len(p_probs), len(s_probs))
         for ix in range(n_windows):
             p_trace = p_probs[ix]
@@ -565,18 +588,64 @@ def _save_and_plot_eqcct_probability_traces(meta, save_dir, predP, predS, args):
             s_thr = float(args.get("S_threshold", 0.0))
             start_time_raw = str(trace_start_times[ix]) if ix < len(trace_start_times) else f"window_{ix:04d}"
             start_time_safe = start_time_raw.replace(" ", "_").replace(":", "-")
+            label_fs = 12
+            tick_fs = 12
+            legend_fs = 12
+            title_fs = 14
+            annotation_fs = 12
 
             fig, ax = plt.subplots(figsize=(12, 4))
             ax.plot(rel_seconds, p_trace[:n_samples], label="P probability", linewidth=1.0)
             ax.plot(rel_seconds, s_trace[:n_samples], label="S probability", linewidth=1.0)
             ax.axhline(y=p_thr, linestyle="--", linewidth=0.8, label=f"P threshold ({p_thr:g})")
             ax.axhline(y=s_thr, linestyle=":", linewidth=0.8, label=f"S threshold ({s_thr:g})")
-            ax.set_xlabel("Seconds from window start")
-            ax.set_ylabel("Probability")
+            ax.set_xlabel("Seconds from window start", fontsize=label_fs)
+            ax.set_ylabel("Probability", fontsize=label_fs)
             ax.set_ylim(0.0, 1.05)
-            ax.set_title(f"EQCCT probability traces | station={meta.get('receiver_code', 'unknown')} | start={start_time_raw}")
-            ax.legend(loc="upper right")
+            ax.set_title(
+                f"EQCCT probability traces | station={meta.get('receiver_code', 'unknown')} | start={start_time_raw}",
+                fontsize=title_fs
+            )
+            ax.tick_params(axis="both", which="major", labelsize=tick_fs)
+            ax.legend(loc="upper right", fontsize=legend_fs)
             ax.grid(alpha=0.2)
+
+            # Annotate the exact picks/probabilities that are written to X_prediction_results.csv.
+            p_pick = p_picks_csv[ix] if ix < len(p_picks_csv) else None
+            p_prob = p_probs_csv[ix] if ix < len(p_probs_csv) else None
+            s_pick = s_picks_csv[ix] if ix < len(s_picks_csv) else None
+            s_prob = s_probs_csv[ix] if ix < len(s_probs_csv) else None
+
+            if p_pick is not None and p_prob is not None:
+                p_idx = int(p_pick)
+                if 0 <= p_idx < n_samples:
+                    p_sec = p_idx / 100.0
+                    p_prob_f = float(p_prob)
+                    ax.scatter([p_sec], [p_prob_f], color="tab:blue", s=24, zorder=4)
+                    ax.annotate(
+                        f"P {p_prob_f:.3f}",
+                        (p_sec, p_prob_f),
+                        textcoords="offset points",
+                        xytext=(6, 8),
+                        fontsize=annotation_fs,
+                        color="tab:blue",
+                    )
+
+            if s_pick is not None and s_prob is not None:
+                s_idx = int(s_pick)
+                if 0 <= s_idx < n_samples:
+                    s_sec = s_idx / 100.0
+                    s_prob_f = float(s_prob)
+                    ax.scatter([s_sec], [s_prob_f], color="tab:orange", s=24, zorder=4)
+                    ax.annotate(
+                        f"S {s_prob_f:.3f}",
+                        (s_sec, s_prob_f),
+                        textcoords="offset points",
+                        xytext=(6, -14),
+                        fontsize=annotation_fs,
+                        color="tab:orange",
+                    )
+
             fig.tight_layout()
 
             plot_path = os.path.join(plots_dir, f"probability_trace_{ix:04d}_{start_time_safe}.png")
@@ -2159,19 +2228,36 @@ def parallel_predict(predict_args, model_actor, gpu=False):
         # predP, predS = ray.get(model_actor.predict.remote(pred_generator))\
         predP, predS = ray.get(model_actor.predict_from_arrays.remote(
                             meta["trace_start_time"], data_set, args["batch_size"], args["normalization_mode"]))
-        # CHANGE MARKER [EQCCT_TRACE_OUTPUT]
-        _save_and_plot_eqcct_probability_traces(meta, save_dir, predP, predS, args)
-        
         detection_memory = []
         prob_memory = []
+        p_picks_csv = []
+        p_probs_csv = []
+        s_picks_csv = []
+        s_probs_csv = []
         for ix in range(len(predP)):
             Ppicks, Pprob = _picker(args, predP[ix,:, 0])   
             Spicks, Sprob = _picker(args, predS[ix,:, 0], 'S_threshold')
+            p_picks_csv.append(Ppicks[0] if Ppicks else None)
+            p_probs_csv.append(Pprob[0] if Pprob else None)
+            s_picks_csv.append(Spicks[0] if Spicks else None)
+            s_probs_csv.append(Sprob[0] if Sprob else None)
 
             detection_memory, prob_memory = _output_writter_prediction(
                 meta, csvPr_gen, Ppicks, Pprob, Spicks, Sprob, 
                 detection_memory, prob_memory, predict_writer, ix, len(predP), len(predS)
             )
+        # CHANGE MARKER [EQCCT_TRACE_OUTPUT]
+        _save_and_plot_eqcct_probability_traces(
+            meta,
+            save_dir,
+            predP,
+            predS,
+            args,
+            p_picks_csv=p_picks_csv,
+            p_probs_csv=p_probs_csv,
+            s_picks_csv=s_picks_csv,
+            s_probs_csv=s_probs_csv,
+        )
                                         
         end_Predicting = time.time()
         delta = (end_Predicting - start_Predicting)
@@ -2293,19 +2379,36 @@ def ripper_parallel_predict_eqcct(predict_args, gpu=False, gpu_memory_limit_mb=N
         
         # RIPPER MODE: Use the locally loaded model directly
         predP, predS = model.predict(pred_generator, verbose=0)
-        # CHANGE MARKER [EQCCT_TRACE_OUTPUT]
-        _save_and_plot_eqcct_probability_traces(meta, save_dir, predP, predS, args)
-        
         detection_memory = []
         prob_memory = []
+        p_picks_csv = []
+        p_probs_csv = []
+        s_picks_csv = []
+        s_probs_csv = []
         for ix in range(len(predP)):
             Ppicks, Pprob = _picker(args, predP[ix,:, 0])   
             Spicks, Sprob = _picker(args, predS[ix,:, 0], 'S_threshold')
+            p_picks_csv.append(Ppicks[0] if Ppicks else None)
+            p_probs_csv.append(Pprob[0] if Pprob else None)
+            s_picks_csv.append(Spicks[0] if Spicks else None)
+            s_probs_csv.append(Sprob[0] if Sprob else None)
 
             detection_memory, prob_memory = _output_writter_prediction(
                 meta, csvPr_gen, Ppicks, Pprob, Spicks, Sprob, 
                 detection_memory, prob_memory, predict_writer, ix, len(predP), len(predS)
             )
+        # CHANGE MARKER [EQCCT_TRACE_OUTPUT]
+        _save_and_plot_eqcct_probability_traces(
+            meta,
+            save_dir,
+            predP,
+            predS,
+            args,
+            p_picks_csv=p_picks_csv,
+            p_probs_csv=p_probs_csv,
+            s_picks_csv=s_picks_csv,
+            s_probs_csv=s_probs_csv,
+        )
                                         
         end_Predicting = time.time()
         delta = (end_Predicting - start_Predicting)
