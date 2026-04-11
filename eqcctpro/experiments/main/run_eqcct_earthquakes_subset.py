@@ -20,6 +20,10 @@ tmp_dir = os.path.join(base_dir, "tmp")
 SUBSET_START_INDEX = 0
 SUBSET_END_INDEX_EXCLUSIVE = 10
 
+# Optional: run exactly one timestamp folder by name (set to None to disable).
+# Example: "20250106T122712Z_20250106T122812Z"
+SPECIFIC_TIMESTAMP_FOLDER = None
+
 # Prediction threshold for both P and S picks.
 PICK_THRESHOLD = 0.1
 
@@ -54,7 +58,15 @@ if (
 ):
     raise ValueError("SUBSET_END_INDEX_EXCLUSIVE must be >= SUBSET_START_INDEX.")
 
-selected_chunk_dirs = chunk_dirs[SUBSET_START_INDEX:SUBSET_END_INDEX_EXCLUSIVE]
+if SPECIFIC_TIMESTAMP_FOLDER is not None:
+    if SPECIFIC_TIMESTAMP_FOLDER not in chunk_dirs:
+        raise ValueError(
+            f"SPECIFIC_TIMESTAMP_FOLDER '{SPECIFIC_TIMESTAMP_FOLDER}' was not found under "
+            f"{input_mseed_directory_path}"
+        )
+    selected_chunk_dirs = [SPECIFIC_TIMESTAMP_FOLDER]
+else:
+    selected_chunk_dirs = chunk_dirs[SUBSET_START_INDEX:SUBSET_END_INDEX_EXCLUSIVE]
 
 if not selected_chunk_dirs:
     raise RuntimeError(f"No timestamp folders found under: {input_mseed_directory_path}")
