@@ -737,6 +737,306 @@ def _save_and_plot_eqcct_probability_traces(
 # CHANGE MARKER [EQCCT_TRACE_OUTPUT] END
 
 
+def _select_seisbench_phase_trace(annotation_stream, phase):
+    """
+    Select the most likely SeisBench probability trace for a given phase ('P' or 'S').
+    """
+    phase = str(phase).upper()
+    best_trace = None
+    best_score = -1
+    for tr in annotation_stream:
+        channel = str(getattr(tr.stats, "channel", "")).upper()
+        trace_id = str(getattr(tr, "id", "")).upper()
+        text = f"{trace_id}|{channel}"
+        score = 0
+        if channel == phase:
+            score += 10
+        if channel.endswith(phase):
+            score += 8
+        if f"_{phase}" in channel or f".{phase}" in channel or f"{phase}_" in channel:
+            score += 6
+        if f"_{phase}" in text or f".{phase}" in text:
+            score += 4
+        if f"PHASENET_{phase}" in text or f"EQTRANSFORMER_{phase}" in text:
+            score += 5
+        if score > best_score:
+            best_score = score
+            best_trace = tr
+    return best_trace if best_score > 0 else None
+
+
+def _save_and_plot_seisbench_probability_traces(
+    stream3c,
+    annotation_stream,
+    save_dir,
+    args,
+    pick_reference_starttime=None,
+    p_pick_seconds=None,
+    p_pick_probs=None,
+    s_pick_seconds=None,
+    s_pick_probs=None,
+    plot_p_pick_seconds=None,
+    plot_p_pick_probs=None,
+    plot_s_pick_seconds=None,
+    plot_s_pick_probs=None,
+):
+    """
+    Optional SeisBench artifact writer for probability traces and plots.
+    Uses the same control flags as EQCCT trace artifacts.
+    """
+    save_probability_traces = bool(args.get("save_probability_traces", False))
+    plot_probability_traces = bool(args.get("plot_probability_traces", False))
+
+    if not save_probability_traces and not plot_probability_traces:
+        return
+    if annotation_stream is None or len(annotation_stream) == 0:
+        return
+
+    p_trace = _select_seisbench_phase_trace(annotation_stream, "P")
+    s_trace = _select_seisbench_phase_trace(annotation_stream, "S")
+    available = [tr for tr in [p_trace, s_trace] if tr is not None]
+    if not available:
+        return
+
+    prob_start = max(tr.stats.starttime for tr in available)
+    prob_end = min(tr.stats.endtime for tr in available)
+    if prob_start >= prob_end:
+        return
+
+    sample_rate = float(available[0].stats.sampling_rate) if getattr(available[0].stats, "sampling_rate", 0) else 100.0
+
+    def _slice_prob(tr):
+        if tr is None:
+            return None
+        arr = np.asarray(tr.copy().slice(prob_start, prob_end).data, dtype=float).reshape(-1)
+        return arr if len(arr) > 0 else None
+
+    p_probs = _slice_prob(p_trace)
+    s_probs = _slice_prob(s_trace)
+
+    if p_probs is None and s_probs is None:
+        return
+    if p_probs is None:
+        p_probs = np.full_like(s_probs, np.nan, dtype=float)
+    if s_probs is None:
+        s_probs = np.full_like(p_probs, np.nan, dtype=float)
+
+    n_samples = min(len(p_probs), len(s_probs))
+    if n_samples <= 0:
+        return
+
+    p_probs = p_probs[:n_samples]
+    s_probs = s_probs[:n_samples]
+    rel_seconds = np.arange(n_samples, dtype=float) / sample_rate
+    trace_start_time = str(prob_start).replace("T", " ").replace("Z", "")
+
+    def _clean_pick_arrays(seconds_arr, probs_arr):
+        sec = np.asarray(seconds_arr if seconds_arr is not None else [], dtype=float).reshape(-1)
+        prob = np.asarray(probs_arr if probs_arr is not None else [], dtype=float).reshape(-1)
+        n = min(len(sec), len(prob))
+        if n == 0:
+            return np.array([], dtype=float), np.array([], dtype=float)
+        sec = sec[:n]
+        prob = prob[:n]
+        if pick_reference_starttime is not None:
+            try:
+                sec = sec - float(prob_start - pick_reference_starttime)
+            except Exception:
+                pass
+        mask = np.isfinite(sec) & np.isfinite(prob)
+        return sec[mask], prob[mask]
+
+    p_pick_seconds_arr, p_pick_probs_arr = _clean_pick_arrays(p_pick_seconds, p_pick_probs)
+    s_pick_seconds_arr, s_pick_probs_arr = _clean_pick_arrays(s_pick_seconds, s_pick_probs)
+
+    # Plot-only picks can be provided separately (e.g., first CSV row only).
+    has_explicit_plot_picks = any(
+        x is not None
+        for x in [plot_p_pick_seconds, plot_p_pick_probs, plot_s_pick_seconds, plot_s_pick_probs]
+    )
+    if has_explicit_plot_picks:
+        p_plot_seconds_arr, p_plot_probs_arr = _clean_pick_arrays(plot_p_pick_seconds, plot_p_pick_probs)
+        s_plot_seconds_arr, s_plot_probs_arr = _clean_pick_arrays(plot_s_pick_seconds, plot_s_pick_probs)
+    else:
+        p_plot_seconds_arr, p_plot_probs_arr = p_pick_seconds_arr, p_pick_probs_arr
+        s_plot_seconds_arr, s_plot_probs_arr = s_pick_seconds_arr, s_pick_probs_arr
+
+    if save_probability_traces:
+        traces_npz_path = os.path.join(save_dir, "X_probability_traces.npz")
+        np.savez_compressed(
+            traces_npz_path,
+            p_probabilities=p_probs,
+            s_probabilities=s_probs,
+            rel_seconds=rel_seconds,
+            trace_start_time=np.array([trace_start_time], dtype=str),
+            sample_rate_hz=sample_rate,
+            p_pick_seconds=p_pick_seconds_arr,
+            p_pick_probabilities=p_pick_probs_arr,
+            s_pick_seconds=s_pick_seconds_arr,
+            s_pick_probabilities=s_pick_probs_arr,
+        )
+
+    if plot_probability_traces:
+        plots_dir = os.path.join(save_dir, "probability_trace_plots")
+        combined_plots_dir = os.path.join(save_dir, "waveform_and_probability_trace_plots")
+        os.makedirs(plots_dir, exist_ok=True)
+        os.makedirs(combined_plots_dir, exist_ok=True)
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+        except Exception:
+            return
+
+        label_fs = 12
+        tick_fs = 12
+        legend_fs = 12
+        title_fs = 14
+        annotation_fs = 12
+        p_thr = float(args.get("P_threshold", 0.0))
+        s_thr = float(args.get("S_threshold", 0.0))
+        start_time_safe = trace_start_time.replace(" ", "_").replace(":", "-")
+
+        def _annotate_pick_values(ax_obj):
+            for sec, prob in zip(p_plot_seconds_arr, p_plot_probs_arr):
+                if 0.0 <= sec <= rel_seconds[-1]:
+                    ax_obj.annotate(
+                        f"P {prob:.3f}",
+                        (sec, prob),
+                        textcoords="offset points",
+                        xytext=(6, 8),
+                        fontsize=annotation_fs,
+                        color="tab:blue",
+                    )
+            for sec, prob in zip(s_plot_seconds_arr, s_plot_probs_arr):
+                if 0.0 <= sec <= rel_seconds[-1]:
+                    ax_obj.annotate(
+                        f"S {prob:.3f}",
+                        (sec, prob),
+                        textcoords="offset points",
+                        xytext=(6, -14),
+                        fontsize=annotation_fs,
+                        color="tab:orange",
+                    )
+
+        # Probability-only plot.
+        fig, ax = plt.subplots(figsize=(12, 4))
+        ax.plot(rel_seconds, p_probs, label="P probability", linewidth=1.0)
+        ax.plot(rel_seconds, s_probs, label="S probability", linewidth=1.0)
+        ax.axhline(y=p_thr, linestyle="--", linewidth=0.8, label=f"P threshold ({p_thr:g})")
+        ax.axhline(y=s_thr, linestyle=":", linewidth=0.8, label=f"S threshold ({s_thr:g})")
+        if len(p_plot_seconds_arr) > 0 and len(p_plot_probs_arr) > 0:
+            ax.scatter(p_plot_seconds_arr, p_plot_probs_arr, s=16, color="tab:blue", zorder=4)
+        if len(s_plot_seconds_arr) > 0 and len(s_plot_probs_arr) > 0:
+            ax.scatter(s_plot_seconds_arr, s_plot_probs_arr, s=16, color="tab:orange", zorder=4)
+        _annotate_pick_values(ax)
+        ax.set_xlabel("Seconds from trace start", fontsize=label_fs)
+        ax.set_ylabel("Probability", fontsize=label_fs)
+        ax.set_ylim(0.0, 1.05)
+        ax.set_title(
+            f"SeisBench probability traces | start={trace_start_time}",
+            fontsize=title_fs,
+        )
+        ax.tick_params(axis="both", which="major", labelsize=tick_fs)
+        ax.legend(loc="upper right", fontsize=legend_fs)
+        ax.grid(alpha=0.2)
+        fig.tight_layout()
+        fig.savefig(os.path.join(plots_dir, f"probability_trace_0000_{start_time_safe}.png"), dpi=120)
+        plt.close(fig)
+
+        # Waveform (E/N/Z) + probability plot.
+        waveform_by_comp = {}
+        if stream3c is not None:
+            for tr in stream3c:
+                comp = str(getattr(tr.stats, "channel", ""))[-1:].upper()
+                if comp and comp not in waveform_by_comp:
+                    waveform_by_comp[comp] = tr
+
+        comp_arrays = {}
+        wave_len = n_samples
+        for comp in ["E", "N", "Z"]:
+            tr = waveform_by_comp.get(comp)
+            if tr is None:
+                comp_arrays[comp] = None
+                continue
+            try:
+                arr = np.asarray(tr.copy().slice(prob_start, prob_end).data, dtype=float).reshape(-1)
+            except Exception:
+                arr = None
+            comp_arrays[comp] = arr if arr is not None and len(arr) > 0 else None
+            if comp_arrays[comp] is not None:
+                wave_len = min(wave_len, len(comp_arrays[comp]))
+
+        if wave_len > 0:
+            rel_wave = rel_seconds[:wave_len]
+            fig2, (ax_e, ax_n, ax_z, ax_prob) = plt.subplots(
+                4,
+                1,
+                figsize=(12, 10),
+                sharex=True,
+                gridspec_kw={"height_ratios": [1.5, 1.5, 1.5, 2.0]},
+            )
+
+            comp_axes = [ax_e, ax_n, ax_z]
+            comp_labels = ["E", "N", "Z"]
+            comp_colors = ["tab:green", "tab:red", "tab:gray"]
+            for ax_wave, comp_label, comp_color in zip(comp_axes, comp_labels, comp_colors):
+                arr = comp_arrays.get(comp_label)
+                if arr is not None:
+                    ax_wave.plot(rel_wave, arr[:wave_len], linewidth=0.8, color=comp_color, alpha=0.9)
+                else:
+                    ax_wave.text(
+                        0.5,
+                        0.5,
+                        f"{comp_label} component unavailable",
+                        transform=ax_wave.transAxes,
+                        ha="center",
+                        va="center",
+                        fontsize=tick_fs,
+                    )
+                ax_wave.set_ylabel(f"{comp_label} Component", fontsize=label_fs)
+                ax_wave.tick_params(axis="both", which="major", labelsize=tick_fs)
+                ax_wave.grid(alpha=0.2)
+                # Picks marked on waveform panels with dashed vertical lines (no text labels).
+                for sec in p_plot_seconds_arr:
+                    if 0.0 <= sec <= rel_wave[-1]:
+                        ax_wave.axvline(x=sec, linestyle="--", linewidth=1.0, color="tab:blue", alpha=0.9)
+                for sec in s_plot_seconds_arr:
+                    if 0.0 <= sec <= rel_wave[-1]:
+                        ax_wave.axvline(x=sec, linestyle="--", linewidth=1.0, color="tab:orange", alpha=0.9)
+
+            ax_e.set_title(
+                f"SeisBench waveform + probability | start={trace_start_time}",
+                fontsize=title_fs,
+            )
+
+            ax_prob.plot(rel_seconds, p_probs, label="P probability", linewidth=1.0)
+            ax_prob.plot(rel_seconds, s_probs, label="S probability", linewidth=1.0)
+            ax_prob.axhline(y=p_thr, linestyle="--", linewidth=0.8, label=f"P threshold ({p_thr:g})")
+            ax_prob.axhline(y=s_thr, linestyle=":", linewidth=0.8, label=f"S threshold ({s_thr:g})")
+            if len(p_plot_seconds_arr) > 0 and len(p_plot_probs_arr) > 0:
+                ax_prob.scatter(p_plot_seconds_arr, p_plot_probs_arr, s=16, color="tab:blue", zorder=4)
+            if len(s_plot_seconds_arr) > 0 and len(s_plot_probs_arr) > 0:
+                ax_prob.scatter(s_plot_seconds_arr, s_plot_probs_arr, s=16, color="tab:orange", zorder=4)
+            _annotate_pick_values(ax_prob)
+            ax_prob.set_xlabel("Seconds from trace start", fontsize=label_fs)
+            ax_prob.set_ylabel("Probability", fontsize=label_fs)
+            ax_prob.set_ylim(0.0, 1.05)
+            ax_prob.tick_params(axis="both", which="major", labelsize=tick_fs)
+            ax_prob.legend(loc="upper right", fontsize=legend_fs)
+            ax_prob.grid(alpha=0.2)
+
+            fig2.tight_layout()
+            fig2.savefig(
+                os.path.join(
+                    combined_plots_dir,
+                    f"waveform_probability_trace_0000_{start_time_safe}.png",
+                ),
+                dpi=120,
+            )
+            plt.close(fig2)
+
+
 def _get_snr(data, pat, window=200):
     
     """ 
@@ -2049,6 +2349,12 @@ class SeisBenchModelActor:
             **kwargs
         )
 
+    def annotate(self, stream, **kwargs):
+        """
+        Annotate a stream and return probability traces.
+        """
+        return self.model_wrapper.annotate(stream, **kwargs)
+
 
 @ray.remote
 def parallel_predict_seisbench(predict_args, model_actor, gpu=False):
@@ -2112,6 +2418,8 @@ def parallel_predict_seisbench(predict_args, model_actor, gpu=False):
         return f"{pos} {station}: FAILED reading mSEED: {str(e)}"
 
     try:
+        need_trace_artifacts = bool(args.get("save_probability_traces", False)) or bool(args.get("plot_probability_traces", False))
+
         # Get picks from SeisBench model
         # Use ray.get with a timeout or just normally if we fixed the CPU deadlock
         classify_output = ray.get(model_actor.classify.remote(
@@ -2122,6 +2430,19 @@ def parallel_predict_seisbench(predict_args, model_actor, gpu=False):
             strict=False,
             flexible_horizontal_components=True
         ))
+
+        annotation_stream = None
+        if need_trace_artifacts:
+            try:
+                annotation_stream = ray.get(
+                    model_actor.annotate.remote(
+                        stream3c,
+                        strict=False,
+                        flexible_horizontal_components=True,
+                    )
+                )
+            except Exception as ann_exp:
+                logger.warning(f"{pos} {station}: Could not generate SeisBench probability traces: {ann_exp}")
         
         # Extract metadata from stream
         station_code = stream3c[0].stats.station if len(stream3c) > 0 else station
@@ -2141,6 +2462,40 @@ def parallel_predict_seisbench(predict_args, model_actor, gpu=False):
         
         p_picks = [p for p in picks if getattr(p, 'phase', 'P').upper() == 'P']
         s_picks = [p for p in picks if getattr(p, 'phase', 'P').upper() == 'S']
+        base_time = stream3c[0].stats.starttime if len(stream3c) > 0 else None
+        p_pick_seconds = []
+        p_pick_probs = []
+        s_pick_seconds = []
+        s_pick_probs = []
+        plot_p_pick_seconds = []
+        plot_p_pick_probs = []
+        plot_s_pick_seconds = []
+        plot_s_pick_probs = []
+        first_plot_row_captured = False
+
+        def _to_rel_sec(pick_time):
+            if pick_time is None or base_time is None:
+                return None
+            try:
+                return float(pick_time - base_time)
+            except Exception:
+                return None
+
+        def _capture_first_plot_row(p_time=None, p_prob=None, s_time=None, s_prob=None):
+            nonlocal first_plot_row_captured
+            if first_plot_row_captured:
+                return
+            if p_time is not None and p_prob is not None:
+                p_rel = _to_rel_sec(p_time)
+                if p_rel is not None:
+                    plot_p_pick_seconds.append(p_rel)
+                    plot_p_pick_probs.append(float(p_prob))
+            if s_time is not None and s_prob is not None:
+                s_rel = _to_rel_sec(s_time)
+                if s_rel is not None:
+                    plot_s_pick_seconds.append(s_rel)
+                    plot_s_pick_probs.append(float(s_prob))
+            first_plot_row_captured = True
         
         # Simple pairing: for each P, find the first S that comes after it within 30s
         used_s = set()
@@ -2151,6 +2506,11 @@ def parallel_predict_seisbench(predict_args, model_actor, gpu=False):
             
             if p_time is None:
                 continue
+
+            p_rel_sec = _to_rel_sec(p_time)
+            if p_rel_sec is not None:
+                p_pick_seconds.append(p_rel_sec)
+                p_pick_probs.append(float(p_prob))
             
             match_s = None
             for s in s_picks:
@@ -2165,9 +2525,22 @@ def parallel_predict_seisbench(predict_args, model_actor, gpu=False):
                 ms_prob = getattr(match_s, 'peak_value', getattr(match_s, 'score', getattr(match_s, 'value', 0.0)))
                 s_time_str = ms_time.strftime('%Y-%m-%d %H:%M:%S.%f') if ms_time else ''
                 s_prob_str = f"{ms_prob:.6f}"
+                s_rel_sec = _to_rel_sec(ms_time)
+                if s_rel_sec is not None:
+                    s_pick_seconds.append(s_rel_sec)
+                    s_pick_probs.append(float(ms_prob))
             else:
+                ms_time = None
+                ms_prob = None
                 s_time_str = ''
                 s_prob_str = ''
+
+            _capture_first_plot_row(
+                p_time=p_time,
+                p_prob=p_prob,
+                s_time=ms_time,
+                s_prob=ms_prob,
+            )
             
             predict_writer.writerow([
                 station_code,
@@ -2189,6 +2562,11 @@ def parallel_predict_seisbench(predict_args, model_actor, gpu=False):
                 s_time = getattr(s, 'peak_time', getattr(s, 'start_time', getattr(s, 'time', None)))
                 s_prob = getattr(s, 'peak_value', getattr(s, 'score', getattr(s, 'value', 0.0)))
                 if s_time:
+                    s_rel_sec = _to_rel_sec(s_time)
+                    if s_rel_sec is not None:
+                        s_pick_seconds.append(s_rel_sec)
+                        s_pick_probs.append(float(s_prob))
+                    _capture_first_plot_row(s_time=s_time, s_prob=s_prob)
                     predict_writer.writerow([
                         station_code,
                         network_code,
@@ -2218,6 +2596,22 @@ def parallel_predict_seisbench(predict_args, model_actor, gpu=False):
             
         csvPr_gen.flush()
         csvPr_gen.close()
+
+        _save_and_plot_seisbench_probability_traces(
+            stream3c=stream3c,
+            annotation_stream=annotation_stream,
+            save_dir=save_dir,
+            args=args,
+            pick_reference_starttime=base_time,
+            p_pick_seconds=p_pick_seconds,
+            p_pick_probs=p_pick_probs,
+            s_pick_seconds=s_pick_seconds,
+            s_pick_probs=s_pick_probs,
+            plot_p_pick_seconds=plot_p_pick_seconds,
+            plot_p_pick_probs=plot_p_pick_probs,
+            plot_s_pick_seconds=plot_s_pick_seconds,
+            plot_s_pick_probs=plot_s_pick_probs,
+        )
         
         end_Predicting = time.time()
         delta = (end_Predicting - start_Predicting)
@@ -2591,6 +2985,7 @@ def ripper_parallel_predict_seisbench(predict_args, gpu=False, gpu_memory_limit_
             return f"{pos} {station}: FAILED reading mSEED (no valid 3C stream)."
         
         stream, freqmin, freqmax = result
+        need_trace_artifacts = bool(args.get("save_probability_traces", False)) or bool(args.get("plot_probability_traces", False))
         
         # Run SeisBench model prediction using the model wrapper's classify method
         # IMPORTANT: strict=False and flexible_horizontal_components=True are needed
@@ -2601,9 +2996,54 @@ def ripper_parallel_predict_seisbench(predict_args, gpu=False, gpu_memory_limit_
                               Detection_threshold=Detection_threshold,
                               strict=False,
                               flexible_horizontal_components=True)
+
+        annotation_stream = None
+        if need_trace_artifacts:
+            try:
+                annotation_stream = model_wrapper.annotate(
+                    stream,
+                    strict=False,
+                    flexible_horizontal_components=True,
+                )
+            except Exception:
+                annotation_stream = None
         
         # Extract picks from ClassifyOutput
         picks = classify_output.picks if hasattr(classify_output, 'picks') else []
+        base_time = stream[0].stats.starttime if len(stream) > 0 else None
+        p_pick_seconds = []
+        p_pick_probs = []
+        s_pick_seconds = []
+        s_pick_probs = []
+        plot_p_pick_seconds = []
+        plot_p_pick_probs = []
+        plot_s_pick_seconds = []
+        plot_s_pick_probs = []
+        first_plot_row_captured = False
+
+        def _to_rel_sec(pick_time):
+            if pick_time is None or base_time is None:
+                return None
+            try:
+                return float(pick_time - base_time)
+            except Exception:
+                return None
+
+        def _capture_first_plot_row(p_time=None, p_prob=None, s_time=None, s_prob=None):
+            nonlocal first_plot_row_captured
+            if first_plot_row_captured:
+                return
+            if p_time is not None and p_prob is not None:
+                p_rel = _to_rel_sec(p_time)
+                if p_rel is not None:
+                    plot_p_pick_seconds.append(p_rel)
+                    plot_p_pick_probs.append(float(p_prob))
+            if s_time is not None and s_prob is not None:
+                s_rel = _to_rel_sec(s_time)
+                if s_rel is not None:
+                    plot_s_pick_seconds.append(s_rel)
+                    plot_s_pick_probs.append(float(s_prob))
+            first_plot_row_captured = True
         
         # Process picks and write to CSV
         for pick in picks:
@@ -2612,6 +3052,18 @@ def ripper_parallel_predict_seisbench(predict_args, gpu=False, gpu_memory_limit_
             pick_phase = getattr(pick, 'phase', 'P').upper()
             
             if pick_time is not None:
+                rel_sec = _to_rel_sec(pick_time)
+                if rel_sec is not None:
+                    if pick_phase == 'P':
+                        p_pick_seconds.append(rel_sec)
+                        p_pick_probs.append(float(pick_prob))
+                    elif pick_phase == 'S':
+                        s_pick_seconds.append(rel_sec)
+                        s_pick_probs.append(float(pick_prob))
+                if pick_phase == 'P':
+                    _capture_first_plot_row(p_time=pick_time, p_prob=pick_prob)
+                elif pick_phase == 'S':
+                    _capture_first_plot_row(s_time=pick_time, s_prob=pick_prob)
                 predict_writer.writerow([
                     args['input_dir'].split('/')[-1],  # file_name
                     '',  # network
@@ -2627,6 +3079,22 @@ def ripper_parallel_predict_seisbench(predict_args, gpu=False, gpu_memory_limit_
                 ])
         csvPr_gen.flush()
         csvPr_gen.close()
+
+        _save_and_plot_seisbench_probability_traces(
+            stream3c=stream,
+            annotation_stream=annotation_stream,
+            save_dir=save_dir,
+            args=args,
+            pick_reference_starttime=base_time,
+            p_pick_seconds=p_pick_seconds,
+            p_pick_probs=p_pick_probs,
+            s_pick_seconds=s_pick_seconds,
+            s_pick_probs=s_pick_probs,
+            plot_p_pick_seconds=plot_p_pick_seconds,
+            plot_p_pick_probs=plot_p_pick_probs,
+            plot_s_pick_seconds=plot_s_pick_seconds,
+            plot_s_pick_probs=plot_s_pick_probs,
+        )
                                         
         end_Predicting = time.time()
         delta = (end_Predicting - start_Predicting)
