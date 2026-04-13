@@ -12,10 +12,28 @@ NPZ_PATH = BASE_DIR / "results/csv/eqcct_earthquakes_subset/20250101T092157Z_202
 
 
 def main() -> None:
+    print(f"Running script: {Path(__file__).resolve()}", flush=True)
+
     if not NPZ_PATH.exists():
         raise FileNotFoundError(f"NPZ file not found: {NPZ_PATH}")
 
     with np.load(NPZ_PATH, allow_pickle=True) as npz:
+        print("\n=== NPZ SUMMARY ===", flush=True)
+        print(f"NPZ keys ({len(npz.files)}): {npz.files}", flush=True)
+        for key in npz.files:
+            arr = np.asarray(npz[key])
+            line = f"{key}: shape={arr.shape}, dtype={arr.dtype}"
+
+            if arr.shape == ():
+                line += f", value={arr.item()}"
+            elif key == "trace_start_time":
+                line += f", first={arr[:min(3, len(arr))].tolist()}"
+            elif np.issubdtype(arr.dtype, np.number):
+                line += f", min={np.nanmin(arr):.4f}, max={np.nanmax(arr):.4f}"
+
+            print(line, flush=True)
+        print("", flush=True)
+
         p_probs = np.asarray(npz["p_probabilities"])
         s_probs = np.asarray(npz["s_probabilities"])
 
@@ -36,9 +54,9 @@ def main() -> None:
         )
 
     n_traces = min(p_probs.shape[0], s_probs.shape[0])
-    print(f"Using NPZ: {NPZ_PATH}")
-    print(f"Trace count: {n_traces}, sample_rate_hz: {sample_rate_hz}")
-    print("Displaying plots only (no files will be saved).")
+    print(f"Using NPZ: {NPZ_PATH}", flush=True)
+    print(f"Trace count: {n_traces}, sample_rate_hz: {sample_rate_hz}", flush=True)
+    print("Displaying plots.", flush=True)
 
     for idx in range(n_traces):
         p_trace = p_probs[idx]
