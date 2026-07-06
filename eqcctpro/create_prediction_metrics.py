@@ -20,8 +20,9 @@ import numpy as np
 import pandas as pd
 
 
-DEFAULT_METRICS_ROOT = Path("eqcctpro/results/metrics")
-DEFAULT_GROUND_TRUTH_DIR = Path("eqcctpro/results/csv/ground_truth")
+SCRIPT_DIR = Path(__file__).resolve().parent
+DEFAULT_METRICS_ROOT = SCRIPT_DIR / "results" / "metrics"
+DEFAULT_GROUND_TRUTH_DIR = SCRIPT_DIR / "results" / "csv" / "ground_truth"
 DEFAULT_ERROR_XLIM = (-0.5, 0.5)
 DEFAULT_CDF_XLIM = (0.0, 0.5)
 
@@ -67,9 +68,6 @@ def normalize_prediction_frame(df: pd.DataFrame) -> pd.DataFrame:
     for column in ("p_arrival_time", "s_arrival_time", "start_dt", "end_dt"):
         if column in df.columns:
             df[column] = pd.to_datetime(df[column], errors="coerce")
-
-    if {"p_probability", "s_probability"}.issubset(df.columns):
-        df = df[df["p_probability"].notna() | df["s_probability"].notna()]
 
     if "start_dt" in df.columns:
         df = df.sort_values(by="start_dt", ascending=True)
