@@ -487,6 +487,57 @@ def save_true_picks(df_true: pd.DataFrame, gt_path: str | Path, gt_fname: str) -
     return str(output_path)
 
 
+def filter_truth_to_prediction_windows(
+    df_true: pd.DataFrame,
+    prediction_windows: pd.DataFrame,
+    *,
+    time_threshold: str = "0s",
+) -> pd.DataFrame:
+    """Keep only true picks covered by predicted station/time windows.
+
+    The prediction windows are expanded by ``time_threshold`` on both sides so
+    edge picks that can legitimately match a prediction are retained.
+    """
+
+    if df_true.empty or prediction_windows.empty:
+        return df_true.iloc[0:0].copy()
+
+    required_truth = {"true_arrival_time", "network", "station"}
+    required_windows = {"network", "station", "start_dt", "end_dt"}
+    missing_truth = required_truth.difference(df_true.columns)
+    missing_windows = required_windows.difference(prediction_windows.columns)
+    if missing_truth:
+        raise ValueError(f"Ground-truth dataframe is missing columns: {sorted(missing_truth)}")
+    if missing_windows:
+        raise ValueError(f"Prediction dataframe is missing window columns: {sorted(missing_windows)}")
+
+    tol = pd.Timedelta(time_threshold)
+
+    truth = df_true.copy()
+    truth["true_arrival_time"] = pd.to_datetime(truth["true_arrival_time"], errors="coerce")
+    truth["network"] = truth["network"].astype(str).str.strip().str.upper()
+    truth["station"] = truth["station"].astype(str).str.strip().str.upper()
+    truth = truth.dropna(subset=["true_arrival_time", "network", "station"])
+
+    windows = prediction_windows[list(required_windows)].copy()
+    windows["start_dt"] = pd.to_datetime(windows["start_dt"], errors="coerce")
+    windows["end_dt"] = pd.to_datetime(windows["end_dt"], errors="coerce")
+    windows["network"] = windows["network"].astype(str).str.strip().str.upper()
+    windows["station"] = windows["station"].astype(str).str.strip().str.upper()
+    windows = windows.dropna(subset=["start_dt", "end_dt", "network", "station"]).drop_duplicates()
+
+    keep = pd.Series(False, index=truth.index)
+    for row in windows.itertuples(index=False):
+        keep |= (
+            (truth["network"] == row.network)
+            & (truth["station"] == row.station)
+            & (truth["true_arrival_time"] >= row.start_dt - tol)
+            & (truth["true_arrival_time"] <= row.end_dt + tol)
+        )
+
+    return truth[keep].drop_duplicates().sort_values("true_arrival_time")
+
+
 def prepare_long_predictions(df: pd.DataFrame, p_threshold: float = 0.1) -> pd.DataFrame:
     """Convert wide prediction output to a long dataframe with one row per pick."""
 
@@ -513,6 +564,7 @@ def merge_predictions_and_truth(
     df_pred_long: pd.DataFrame,
     df_true: pd.DataFrame,
     time_threshold: str = "10s",
+    prediction_windows: pd.DataFrame | None = None,
 ):
     """Match predicted picks to true picks and return both merge directions."""
 
@@ -521,6 +573,12 @@ def merge_predictions_and_truth(
 
     df_true["true_arrival_time"] = pd.to_datetime(df_true["true_arrival_time"])
     df_true = df_true[df_true["phase"].isin(["P", "S"])]
+    if prediction_windows is not None:
+        df_true = filter_truth_to_prediction_windows(
+            df_true,
+            prediction_windows,
+            time_threshold=time_threshold,
+        )
 
     df_pred_long = df_pred_long.sort_values("pred_arrival_time")
     df_true = df_true.sort_values("true_arrival_time")
